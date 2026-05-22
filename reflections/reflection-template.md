@@ -6,13 +6,11 @@
 ---
 
 ## Commits This Week
-
-<!-- Paste a link to your commits for this week. The easiest way: go to your repo on GitHub,
-     click "commits", and copy the URL after filtering by your name or branch. -->
+e6154ae54478bb48d45b50f7f46929f1f7a74248 https://github.com/benjamincassidymetro/media-tracker-android/pull/11/changes/e6154ae54478bb48d45b50f7f46929f1f7a74248
 
 **Link:**
 
----
+https://github.com/benjamincassidymetro/media-tracker-android/pull/11/changes/e6154ae54478bb48d45b50f7f46929f1f7a74248
 
 ## Code Review
 
