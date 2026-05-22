@@ -1,7 +1,7 @@
-# Week {{N}} Reflection
+# Week {01} Reflection
 
-**Name:**
-**Date:**
+**Samba Kamara:**
+**05/21/2026:**
 
 ---
 
