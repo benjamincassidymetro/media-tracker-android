@@ -1,5 +1,9 @@
 package edu.metrostate.ics342.mediatracker.ui.library
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.text.style.TextAlign
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -39,17 +43,21 @@ fun LibraryScreen(
         TopAppBar(title = { Text(stringResource(edu.metrostate.ics342.mediatracker.R.string.library_title)) })
 
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            listOf(
-                "all"   to edu.metrostate.ics342.mediatracker.R.string.filter_all,
-                "book"  to edu.metrostate.ics342.mediatracker.R.string.filter_books,
-                "movie" to edu.metrostate.ics342.mediatracker.R.string.filter_movies,
-                "show"  to edu.metrostate.ics342.mediatracker.R.string.filter_shows
-            )
+    modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 16.dp, vertical = 8.dp)
+        .horizontalScroll(rememberScrollState()),
+    horizontalArrangement = Arrangement.spacedBy(8.dp)
+) {
+    listOf(
+        "all"   to edu.metrostate.ics342.mediatracker.R.string.filter_all,
+        "book"  to edu.metrostate.ics342.mediatracker.R.string.filter_books,
+        "movie" to edu.metrostate.ics342.mediatracker.R.string.filter_movies,
+        "show"  to edu.metrostate.ics342.mediatracker.R.string.filter_shows,
+        "comic" to edu.metrostate.ics342.mediatracker.R.string.filter_comics,
+        "album" to edu.metrostate.ics342.mediatracker.R.string.filter_albums
+    )
+
                 .forEach { (key, labelRes) ->
                     FilterChip(
                         selected = selectedType == key,
@@ -69,7 +77,7 @@ fun LibraryScreen(
                     shape    = SegmentedButtonDefaults.itemShape(
                         index = index, count = LibraryStatus.values().size),
                     selected = selectedStatus == status,
-                    onClick  = { selectedStatus = status },
+                    onClick  = { viewModel.updateFilter(status) },
                     label    = { Text(stringResource(status.labelRes)) }
                 )
             }

@@ -27,7 +27,7 @@ fun MyProfileScreen(
     onSettingsClick: () -> Unit,
     viewModel: ProfileViewModel = viewModel()
 ) {
-    val user    by viewModel.currentUser.collectAsState()
+    val user    by viewModel.currentUser.collectAsStateWithLifecycle()
     val library by viewModel.libraryPreview.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize()) {

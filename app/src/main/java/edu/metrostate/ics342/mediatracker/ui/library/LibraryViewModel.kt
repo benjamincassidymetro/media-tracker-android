@@ -18,14 +18,14 @@ class LibraryViewModel : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val_filterState = MutableStateFlow( value = LibraryStatus.WANT_TO) 
     init {
         loadLibrary()
     }
 
     fun loadLibrary() {
-        GlobalScope.launch {
+        viewModelScope.launch {
             _isLoading.value = true
-            Thread.sleep(800)
             _libraryItems.value = FakeMediaRepository.libraryItems
             _isLoading.value = false
         }
@@ -40,4 +40,6 @@ class LibraryViewModel : ViewModel() {
             if (item.mediaId == mediaId) item.copy(status = newStatus) else item
         }
     }
+
+    fun updateFilter(status: LibraryStatus)
 }
