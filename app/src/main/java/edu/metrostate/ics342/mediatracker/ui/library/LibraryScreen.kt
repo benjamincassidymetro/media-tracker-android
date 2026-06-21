@@ -51,6 +51,7 @@ fun LibraryScreen(
         LazyRow(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
+
         ) {
             items(
                 listOf(
@@ -130,6 +131,7 @@ fun LibraryScreen(
         )
 
         LazyColumn(
+            modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
