@@ -2,7 +2,6 @@ package edu.metrostate.ics342.mediatracker.ui.library
 
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material3.*
+import edu.metrostate.ics342.mediatracker.R
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,6 +25,7 @@ import coil.compose.AsyncImage
 import edu.metrostate.ics342.mediatracker.data.model.LibraryItem
 import edu.metrostate.ics342.mediatracker.data.model.LibraryStatus
 import edu.metrostate.ics342.mediatracker.data.model.creatorCredit
+import androidx.compose.foundation.lazy.LazyRow
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,43 +48,50 @@ fun LibraryScreen(
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(title = { Text(stringResource(edu.metrostate.ics342.mediatracker.R.string.library_title)) })
 
-        FlowRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        LazyRow(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            listOf(
-                "all"   to edu.metrostate.ics342.mediatracker.R.string.filter_all,
-                "book"  to edu.metrostate.ics342.mediatracker.R.string.filter_books,
-                "movie" to edu.metrostate.ics342.mediatracker.R.string.filter_movies,
-                "show"  to edu.metrostate.ics342.mediatracker.R.string.filter_shows
-            )
-                .forEach { (key, labelRes) ->
-                    FilterChip(
-                        selected = selectedType == key,
-                        onClick  = { selectedType = key },
-                        label    = { Text(stringResource(labelRes)) }
-                    )
-                }
-        }
-
-        SingleChoiceSegmentedButtonRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp)
-        ) {
-            LibraryStatus.values().forEachIndexed { index, status ->
-                SegmentedButton(
-                    shape    = SegmentedButtonDefaults.itemShape(
-                        index = index, count = LibraryStatus.values().size),
-                    selected = selectedStatus == status,
-                    onClick  = { selectedStatus = status },
-                    label    = { Text(stringResource(status.labelRes)) }
+            items(
+                listOf(
+                    "all" to R.string.filter_all,
+                    "book" to R.string.filter_books,
+                    "movie" to R.string.filter_movies,
+                    "show" to R.string.filter_shows
+                )
+            ) { (key, labelRes) ->
+                FilterChip(
+                    selected = selectedType == key,
+                    onClick = { selectedType = key },
+                    label = {
+                        Text(stringResource(labelRes))
+                    }
                 )
             }
         }
+        LazyRow(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            item {
+                SingleChoiceSegmentedButtonRow {
+                    LibraryStatus.values().forEachIndexed { index, status ->
+                        SegmentedButton(
+                            shape = SegmentedButtonDefaults.itemShape(
+                                index = index,
+                                count = LibraryStatus.values().size
+                            ),
+                            selected = selectedStatus == status,
+                            onClick = { selectedStatus = status },
+                            label = {
+                                Text(stringResource(status.labelRes))
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
 
         HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
 
