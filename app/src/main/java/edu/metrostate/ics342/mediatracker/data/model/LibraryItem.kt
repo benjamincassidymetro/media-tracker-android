@@ -2,7 +2,9 @@ package edu.metrostate.ics342.mediatracker.data.model
 
 import androidx.annotation.StringRes
 import edu.metrostate.ics342.mediatracker.R
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class LibraryItem(
     val userId: String,
     val mediaId: Int,
@@ -12,6 +14,7 @@ data class LibraryItem(
     val media: Media
 )
 
+@Serializable
 enum class LibraryStatus(@param:StringRes val labelRes: Int) {
     WANT_TO(R.string.status_want_to),
     IN_PROGRESS(R.string.status_in_progress),

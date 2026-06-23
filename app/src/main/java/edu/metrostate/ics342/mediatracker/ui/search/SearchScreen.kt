@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 // ── STUB — Students build this in Week 5 ─────────────────────────────────────
 //
@@ -27,18 +28,18 @@ fun SearchScreen(
     onMediaClick: (Int) -> Unit
 ) {
     var query by rememberSaveable { mutableStateOf("") }
-    var selectedType by rememberSaveable { mutableStateOf("all") }
 
-    val sampleMedia = listOf(
-        Triple(1, "Dune", "Frank Herbert"),
-        Triple(2, "Inception", "Christopher Nolan"),
-        Triple(3, "Severance", "Dan Erickson")
-    )
+    var selectedType by rememberSaveable { mutableStateOf("All") }
 
-    val filteredMedia = sampleMedia.filter {
-        query.isBlank() || it.second.contains(query, ignoreCase = true)
+    val viewModel: SearchViewModel = viewModel()
+
+    val mediaItems by viewModel.results.collectAsState()
+
+    val filteredMedia = mediaItems.filter {
+        query.isBlank() ||
+                it.title.contains(query, ignoreCase = true) ||
+                it.subtitle.contains(query, ignoreCase = true)
     }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -83,16 +84,17 @@ fun SearchScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onMediaClick(media.first) },
+                        .clickable { onMediaClick(media.id) },
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Column(Modifier.padding(16.dp)) {
                         Text(
-                            media.second,
+                            media.title,
                             style = MaterialTheme.typography.titleMedium
                         )
+
                         Text(
-                            media.third,
+                            media.subtitle,
                             style = MaterialTheme.typography.bodySmall
                         )
                     }

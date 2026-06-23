@@ -12,9 +12,9 @@ object FakeMediaRepository {
 
     val currentUser = UserProfile(
         id           = "user-001",
-        email        = "alex@example.com",
-        username     = "alexreads",
-        displayName  = "Alex Chen",
+        email        = "fascineh@gmail.com",
+        username     = "fascineh1",
+        displayName  = "Samba Alex Kamara",
         bio          = "Avid reader and film buff. Always looking for the next great story.",
         avatarUrl    = null,
         followerCount  = 12,

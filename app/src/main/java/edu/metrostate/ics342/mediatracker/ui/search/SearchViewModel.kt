@@ -2,14 +2,24 @@ package edu.metrostate.ics342.mediatracker.ui.search
 
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class SearchViewModel : ViewModel() {
-    // TODO (Week 5): Add query StateFlow, results StateFlow, loading/error states.
-    // Wire to GET /media with debounced LaunchedEffect.
-    private val _query = MutableStateFlow("")
-    val query: StateFlow<String> = _query.asStateFlow()
+data class MediaItem(
+    val id: Int,
+    val title: String,
+    val subtitle: String
+)
 
-    fun onQueryChange(value: String) { _query.value = value }
+class SearchViewModel : ViewModel() {
+
+    private val _results = MutableStateFlow(
+        listOf(
+            MediaItem(1, "Dune", "Frank Herbert"),
+            MediaItem(2, "Inception", "Christopher Nolan"),
+            MediaItem(3, "Severance", "Dan Erickson"),
+            MediaItem(4, "Last of the Mohicans", "Michael Mann")
+        )
+    )
+
+    val results = _results.asStateFlow()
 }

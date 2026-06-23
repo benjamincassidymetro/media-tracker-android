@@ -2,13 +2,14 @@ package edu.metrostate.ics342.mediatracker.data.model
 
 import android.content.Context
 import edu.metrostate.ics342.mediatracker.R
-
+import kotlinx.serialization.Serializable
 /**
  * A single event in the social activity feed.
  *
  * [activityType] is one of: "added", "started", "finished", "review"
  * [rating] and [reviewText] are only present when activityType == "review".
  */
+@Serializable
 data class ActivityEvent(
     val id: Int,
     val userId: String,
@@ -20,7 +21,6 @@ data class ActivityEvent(
     val user: UserProfile? = null,
     val media: Media? = null
 )
-
 fun ActivityEvent.descriptionText(context: Context): String {
     val name  = user?.displayName ?: context.getString(R.string.feed_user_someone)
     val title = media?.title      ?: context.getString(R.string.feed_media_something)

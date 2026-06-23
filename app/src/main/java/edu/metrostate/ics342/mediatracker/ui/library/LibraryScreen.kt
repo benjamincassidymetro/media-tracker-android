@@ -93,7 +93,6 @@ fun LibraryScreen(
             }
         }
 
-
         HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
 
         if (isLoading) {
