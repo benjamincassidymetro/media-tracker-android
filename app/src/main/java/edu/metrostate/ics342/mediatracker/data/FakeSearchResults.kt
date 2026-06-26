@@ -1,0 +1,97 @@
+package edu.metrostate.ics342.mediatracker.data
+
+import edu.metrostate.ics342.mediatracker.data.model.Media
+
+val fakeSearchResults: List<Media> = listOf(
+    // Books 1-30
+    Media(1, "book", "Dune", author = "Frank Herbert", publishedYear = 1965, averageRating = 4.8f, ratingCount = 1847, genres = listOf("Science Fiction", "Epic")),
+    Media(2, "book", "Foundation", author = "Isaac Asimov", publishedYear = 1951, averageRating = 4.7f, ratingCount = 1623, genres = listOf("Science Fiction")),
+    Media(3, "book", "The Martian", author = "Andy Weir", publishedYear = 2011, averageRating = 4.5f, ratingCount = 1412, genres = listOf("Science Fiction")),
+    Media(4, "book", "Project Hail Mary", author = "Andy Weir", publishedYear = 2021, averageRating = 4.9f, ratingCount = 1388, genres = listOf("Science Fiction", "Adventure")),
+    Media(5, "book", "Ender's Game", author = "Orson Scott Card", publishedYear = 1985, averageRating = 4.6f, ratingCount = 1956, genres = listOf("Science Fiction")),
+    Media(6, "book", "Neuromancer", author = "William Gibson", publishedYear = 1984, averageRating = 4.2f, ratingCount = 876, genres = listOf("Cyberpunk")),
+    Media(7, "book", "Snow Crash", author = "Neal Stephenson", publishedYear = 1992, averageRating = 4.3f, ratingCount = 987, genres = listOf("Cyberpunk")),
+    Media(8, "book", "Hyperion", author = "Dan Simmons", publishedYear = 1989, averageRating = 4.6f, ratingCount = 1298, genres = listOf("Science Fiction")),
+    Media(9, "book", "Recursion", author = "Blake Crouch", publishedYear = 2019, averageRating = 4.4f, ratingCount = 1023, genres = listOf("Thriller")),
+    Media(10, "book", "Dark Matter", author = "Blake Crouch", publishedYear = 2016, averageRating = 4.3f, ratingCount = 1089, genres = listOf("Thriller")),
+
+    Media(11, "book", "The Left Hand of Darkness", author = "Ursula K. Le Guin", publishedYear = 1969, averageRating = 4.4f, ratingCount = 934, genres = listOf("Science Fiction")),
+    Media(12, "book", "Old Man's War", author = "John Scalzi", publishedYear = 2005, averageRating = 4.3f, ratingCount = 781, genres = listOf("Military")),
+    Media(13, "book", "Children of Time", author = "Adrian Tchaikovsky", publishedYear = 2015, averageRating = 4.6f, ratingCount = 892, genres = listOf("Science Fiction")),
+    Media(14, "book", "The Three-Body Problem", author = "Liu Cixin", publishedYear = 2008, averageRating = 4.5f, ratingCount = 1320, genres = listOf("Science Fiction")),
+    Media(15, "book", "Ready Player One", author = "Ernest Cline", publishedYear = 2011, averageRating = 4.2f, ratingCount = 1640, genres = listOf("Adventure")),
+    Media(16, "book", "Leviathan Wakes", author = "James S. A. Corey", publishedYear = 2011, averageRating = 4.5f, ratingCount = 1134, genres = listOf("Space Opera")),
+    Media(17, "book", "All Systems Red", author = "Martha Wells", publishedYear = 2017, averageRating = 4.5f, ratingCount = 743, genres = listOf("Science Fiction")),
+    Media(18, "book", "The Hobbit", author = "J.R.R. Tolkien", publishedYear = 1937, averageRating = 4.8f, ratingCount = 3200, genres = listOf("Fantasy")),
+    Media(19, "book", "Mistborn", author = "Brandon Sanderson", publishedYear = 2006, averageRating = 4.7f, ratingCount = 1755, genres = listOf("Fantasy")),
+    Media(20, "book", "The Name of the Wind", author = "Patrick Rothfuss", publishedYear = 2007, averageRating = 4.6f, ratingCount = 1201, genres = listOf("Fantasy")),
+
+    Media(21, "book", "The Way of Kings", author = "Brandon Sanderson", publishedYear = 2010, averageRating = 4.8f, ratingCount = 1743, genres = listOf("Fantasy")),
+    Media(22, "book", "The Hunger Games", author = "Suzanne Collins", publishedYear = 2008, averageRating = 4.4f, ratingCount = 2400, genres = listOf("Dystopian")),
+    Media(23, "book", "1984", author = "George Orwell", publishedYear = 1949, averageRating = 4.6f, ratingCount = 3100, genres = listOf("Dystopian")),
+    Media(24, "book", "Brave New World", author = "Aldous Huxley", publishedYear = 1932, averageRating = 4.3f, ratingCount = 2100, genres = listOf("Dystopian")),
+    Media(25, "book", "Fahrenheit 451", author = "Ray Bradbury", publishedYear = 1953, averageRating = 4.4f, ratingCount = 1900, genres = listOf("Dystopian")),
+    Media(26, "book", "The Giver", author = "Lois Lowry", publishedYear = 1993, averageRating = 4.2f, ratingCount = 1450, genres = listOf("Dystopian")),
+    Media(27, "book", "The Road", author = "Cormac McCarthy", publishedYear = 2006, averageRating = 4.2f, ratingCount = 1300, genres = listOf("Drama")),
+    Media(28, "book", "Never Let Me Go", author = "Kazuo Ishiguro", publishedYear = 2005, averageRating = 4.1f, ratingCount = 678, genres = listOf("Literary Fiction")),
+    Media(29, "book", "The Lightning Thief", author = "Rick Riordan", publishedYear = 2005, averageRating = 4.5f, ratingCount = 2200, genres = listOf("Fantasy")),
+    Media(30, "book", "The Maze Runner", author = "James Dashner", publishedYear = 2009, averageRating = 4.1f, ratingCount = 1500, genres = listOf("Dystopian")),
+
+    // Movies 31-55
+    Media(31, "movie", "Arrival", director = "Denis Villeneuve", publishedYear = 2016, averageRating = 4.5f, ratingCount = 1534, genres = listOf("Science Fiction", "Drama")),
+    Media(32, "movie", "Interstellar", director = "Christopher Nolan", publishedYear = 2014, averageRating = 4.6f, ratingCount = 2341, genres = listOf("Science Fiction")),
+    Media(33, "movie", "Inception", director = "Christopher Nolan", publishedYear = 2010, averageRating = 4.7f, ratingCount = 2789, genres = listOf("Action")),
+    Media(34, "movie", "The Matrix", director = "Lana Wachowski", publishedYear = 1999, averageRating = 4.7f, ratingCount = 3012, genres = listOf("Action")),
+    Media(35, "movie", "Blade Runner 2049", director = "Denis Villeneuve", publishedYear = 2017, averageRating = 4.4f, ratingCount = 1432, genres = listOf("Science Fiction")),
+    Media(36, "movie", "Dune Part One", director = "Denis Villeneuve", publishedYear = 2021, averageRating = 4.6f, ratingCount = 1900, genres = listOf("Science Fiction")),
+    Media(37, "movie", "Dune Part Two", director = "Denis Villeneuve", publishedYear = 2024, averageRating = 4.8f, ratingCount = 2100, genres = listOf("Science Fiction")),
+    Media(38, "movie", "The Batman", director = "Matt Reeves", publishedYear = 2022, averageRating = 4.3f, ratingCount = 1750, genres = listOf("Action")),
+    Media(39, "movie", "Black Panther", director = "Ryan Coogler", publishedYear = 2018, averageRating = 4.4f, ratingCount = 2500, genres = listOf("Action")),
+    Media(40, "movie", "Spider-Man Into the Spider-Verse", director = "Bob Persichetti", publishedYear = 2018, averageRating = 4.8f, ratingCount = 2600, genres = listOf("Animation")),
+
+    Media(41, "movie", "Everything Everywhere All at Once", director = "Daniel Kwan", publishedYear = 2022, averageRating = 4.8f, ratingCount = 1876, genres = listOf("Comedy", "Drama")),
+    Media(42, "movie", "The Social Network", director = "David Fincher", publishedYear = 2010, averageRating = 4.5f, ratingCount = 1600, genres = listOf("Drama")),
+    Media(43, "movie", "The Prestige", director = "Christopher Nolan", publishedYear = 2006, averageRating = 4.5f, ratingCount = 1678, genres = listOf("Mystery")),
+    Media(44, "movie", "The Dark Knight", director = "Christopher Nolan", publishedYear = 2008, averageRating = 4.9f, ratingCount = 4200, genres = listOf("Action")),
+    Media(45, "movie", "Tenet", director = "Christopher Nolan", publishedYear = 2020, averageRating = 4.0f, ratingCount = 1200, genres = listOf("Action")),
+    Media(46, "movie", "Ex Machina", director = "Alex Garland", publishedYear = 2014, averageRating = 4.4f, ratingCount = 1123, genres = listOf("Thriller")),
+    Media(47, "movie", "Annihilation", director = "Alex Garland", publishedYear = 2018, averageRating = 4.2f, ratingCount = 934, genres = listOf("Horror")),
+    Media(48, "movie", "Contact", director = "Robert Zemeckis", publishedYear = 1997, averageRating = 4.4f, ratingCount = 1045, genres = listOf("Drama")),
+    Media(49, "movie", "Looper", director = "Rian Johnson", publishedYear = 2012, averageRating = 4.0f, ratingCount = 934, genres = listOf("Action")),
+    Media(50, "movie", "Her", director = "Spike Jonze", publishedYear = 2013, averageRating = 4.4f, ratingCount = 1234, genres = listOf("Romance")),
+
+    Media(51, "movie", "Moon", director = "Duncan Jones", publishedYear = 2009, averageRating = 4.3f, ratingCount = 678, genres = listOf("Drama")),
+    Media(52, "movie", "District 9", director = "Neill Blomkamp", publishedYear = 2009, averageRating = 4.2f, ratingCount = 987, genres = listOf("Action")),
+    Media(53, "movie", "Predestination", director = "Michael Spierig", publishedYear = 2014, averageRating = 4.2f, ratingCount = 612, genres = listOf("Thriller")),
+    Media(54, "movie", "The Iron Giant", director = "Brad Bird", publishedYear = 1999, averageRating = 4.6f, ratingCount = 990, genres = listOf("Animation")),
+    Media(55, "movie", "WALL-E", director = "Andrew Stanton", publishedYear = 2008, averageRating = 4.7f, ratingCount = 2300, genres = listOf("Animation")),
+
+    // Shows 56-80
+    Media(56, "show", "Severance", creator = "Dan Erickson", network = "Apple TV+", publishedYear = 2022, averageRating = 4.9f, ratingCount = 1432, genres = listOf("Thriller", "Drama")),
+    Media(57, "show", "The Bear", creator = "Christopher Storer", network = "FX on Hulu", publishedYear = 2022, averageRating = 4.8f, ratingCount = 1287, genres = listOf("Drama", "Comedy")),
+    Media(58, "show", "Andor", creator = "Tony Gilroy", network = "Disney+", publishedYear = 2022, averageRating = 4.7f, ratingCount = 1098, genres = listOf("Science Fiction")),
+    Media(59, "show", "Dark", creator = "Baran bo Odar", network = "Netflix", publishedYear = 2017, averageRating = 4.8f, ratingCount = 1563, genres = listOf("Mystery")),
+    Media(60, "show", "Black Mirror", creator = "Charlie Brooker", network = "Netflix", publishedYear = 2011, averageRating = 4.4f, ratingCount = 2103, genres = listOf("Anthology")),
+    Media(61, "show", "The Expanse", creator = "Mark Fergus", network = "Amazon", publishedYear = 2015, averageRating = 4.7f, ratingCount = 1234, genres = listOf("Science Fiction")),
+    Media(62, "show", "Stranger Things", creator = "The Duffer Brothers", network = "Netflix", publishedYear = 2016, averageRating = 4.5f, ratingCount = 3100, genres = listOf("Horror")),
+    Media(63, "show", "The Last of Us", creator = "Craig Mazin", network = "HBO", publishedYear = 2023, averageRating = 4.6f, ratingCount = 1700, genres = listOf("Drama")),
+    Media(64, "show", "House of the Dragon", creator = "Ryan Condal", network = "HBO", publishedYear = 2022, averageRating = 4.3f, ratingCount = 1600, genres = listOf("Fantasy")),
+    Media(65, "show", "The Mandalorian", creator = "Jon Favreau", network = "Disney+", publishedYear = 2019, averageRating = 4.5f, ratingCount = 2200, genres = listOf("Science Fiction")),
+
+    Media(66, "show", "Loki", creator = "Michael Waldron", network = "Disney+", publishedYear = 2021, averageRating = 4.3f, ratingCount = 1800, genres = listOf("Action")),
+    Media(67, "show", "WandaVision", creator = "Jac Schaeffer", network = "Disney+", publishedYear = 2021, averageRating = 4.2f, ratingCount = 1500, genres = listOf("Drama")),
+    Media(68, "show", "Watchmen", creator = "Damon Lindelof", network = "HBO", publishedYear = 2019, averageRating = 4.7f, ratingCount = 934, genres = listOf("Drama")),
+    Media(69, "show", "Westworld", creator = "Jonathan Nolan", network = "HBO", publishedYear = 2016, averageRating = 4.3f, ratingCount = 1345, genres = listOf("Science Fiction")),
+    Media(70, "show", "Fringe", creator = "J.J. Abrams", network = "Fox", publishedYear = 2008, averageRating = 4.4f, ratingCount = 876, genres = listOf("Thriller")),
+    Media(71, "show", "Lost", creator = "J.J. Abrams", network = "ABC", publishedYear = 2004, averageRating = 4.2f, ratingCount = 2100, genres = listOf("Mystery")),
+    Media(72, "show", "Better Call Saul", creator = "Vince Gilligan", network = "AMC", publishedYear = 2015, averageRating = 4.8f, ratingCount = 1876, genres = listOf("Crime")),
+    Media(73, "show", "Breaking Bad", creator = "Vince Gilligan", network = "AMC", publishedYear = 2008, averageRating = 4.9f, ratingCount = 3900, genres = listOf("Crime")),
+    Media(74, "show", "Succession", creator = "Jesse Armstrong", network = "HBO", publishedYear = 2018, averageRating = 4.8f, ratingCount = 1567, genres = listOf("Drama")),
+    Media(75, "show", "Station Eleven", creator = "Patrick Somerville", network = "HBO Max", publishedYear = 2021, averageRating = 4.5f, ratingCount = 678, genres = listOf("Drama")),
+
+    Media(76, "show", "The Leftovers", creator = "Damon Lindelof", network = "HBO", publishedYear = 2014, averageRating = 4.6f, ratingCount = 812, genres = listOf("Mystery")),
+    Media(77, "show", "Devs", creator = "Alex Garland", network = "Hulu", publishedYear = 2020, averageRating = 4.2f, ratingCount = 543, genres = listOf("Thriller")),
+    Media(78, "show", "The OA", creator = "Brit Marling", network = "Netflix", publishedYear = 2016, averageRating = 4.3f, ratingCount = 678, genres = listOf("Mystery")),
+    Media(79, "show", "Twin Peaks", creator = "David Lynch", network = "Showtime", publishedYear = 1990, averageRating = 4.5f, ratingCount = 789, genres = listOf("Mystery")),
+    Media(80, "show", "Mindhunter", creator = "Joe Penhall", network = "Netflix", publishedYear = 2017, averageRating = 4.6f, ratingCount = 1034, genres = listOf("Crime"))
+)
