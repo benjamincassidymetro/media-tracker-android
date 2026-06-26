@@ -15,10 +15,11 @@ import edu.metrostate.ics342.mediatracker.data.SessionRepository
 import edu.metrostate.ics342.mediatracker.data.UserRepository
 import edu.metrostate.ics342.mediatracker.data.datastore.DefaultSessionRepository
 import edu.metrostate.ics342.mediatracker.data.network.DefaultUserRepository
+import edu.metrostate.ics342.mediatracker.data.network.FakeUserRepository
 
 class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val userRepository: UserRepository = DefaultUserRepository()
+    private val userRepository: UserRepository = FakeUserRepository()
     private val sessionRepository: SessionRepository = DefaultSessionRepository(application)
 
     sealed class AuthUiState {
@@ -30,10 +31,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     // ── Login ───────────────────────────────────────────────────
 
-    private val _email    = MutableStateFlow("")
+    private val _email    = MutableStateFlow("alex@example.com")
     val email: StateFlow<String> = _email.asStateFlow()
 
-    private val _password = MutableStateFlow("")
+    private val _password = MutableStateFlow("password123")
     val password: StateFlow<String> = _password.asStateFlow()
 
     private val _loginState = MutableStateFlow<AuthUiState>(AuthUiState.Idle)

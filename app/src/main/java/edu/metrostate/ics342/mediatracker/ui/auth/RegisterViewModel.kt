@@ -9,11 +9,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import edu.metrostate.ics342.mediatracker.data.RegisterResult
 import edu.metrostate.ics342.mediatracker.data.network.DefaultUserRepository
-import edu.metrostate.ics342.mediatracker.data.model.UserRepository
+import edu.metrostate.ics342.mediatracker.data.network.FakeUserRepository
+import edu.metrostate.ics342.mediatracker.data.UserRepository
 
 
 class RegisterViewModel(
-    private val userRepository: UserRepository = DefaultUserRepository()
+    private val userRepository: UserRepository = FakeUserRepository()
 ) : ViewModel() {
 
     sealed class RegisterUiState {

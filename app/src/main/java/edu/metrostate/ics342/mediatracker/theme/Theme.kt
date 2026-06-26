@@ -63,9 +63,9 @@ fun MediaTrackerTheme(
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
-            val activity = view.context as? Activity
-            if (activity != null) {
-                WindowCompat.getInsetsController(activity.window, view).isAppearanceLightStatusBars = !darkTheme
+            val window = (view.context as? Activity)?.window
+            if (window != null) {
+                WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
             }
         }
     }

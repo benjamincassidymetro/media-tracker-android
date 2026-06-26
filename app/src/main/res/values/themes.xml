@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<!-- Base theme — used by the system before Compose takes over -->
 <resources>
-    <!-- Base theme — used by the system before Compose takes over -->
     <style name="Theme.MediaTracker" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>

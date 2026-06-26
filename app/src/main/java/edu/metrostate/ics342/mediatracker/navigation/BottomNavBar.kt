@@ -1,77 +1,64 @@
 package edu.metrostate.ics342.mediatracker.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Feed
-import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.automirrored.outlined.Feed
-import androidx.compose.material.icons.automirrored.outlined.MenuBook
-import androidx.compose.material.icons.filled.Feed
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.CollectionsBookmark
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.Feed
-import androidx.compose.material.icons.outlined.Group
-import androidx.compose.material.icons.outlined.MenuBook
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.navigation.NavController
-import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.navigation.NavDestination.Companion.hierarchy //add this in
+import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.compose.currentBackStackEntryAsState
+import edu.metrostate.ics342.mediatracker.R
 
-data class BottomNavItem(
-    val route: String,
-    val labelRes: Int,
-    val selectedIcon: @Composable () -> Unit,
-    val unselectedIcon: @Composable () -> Unit,
-)
-
-val bottomNavItems = listOf(
-    BottomNavItem(Routes.ACTIVITY_FEED, edu.metrostate.ics342.mediatracker.R.string.nav_feed,
-        selectedIcon   = { Icon(Icons.AutoMirrored.Filled.Feed,     stringResource(edu.metrostate.ics342.mediatracker.R.string.nav_feed)) },
-        unselectedIcon = { Icon(Icons.AutoMirrored.Outlined.Feed,   stringResource(edu.metrostate.ics342.mediatracker.R.string.nav_feed)) }),
-    BottomNavItem(Routes.SEARCH, edu.metrostate.ics342.mediatracker.R.string.nav_search,
-        selectedIcon   = { Icon(Icons.Filled.Search,   stringResource(edu.metrostate.ics342.mediatracker.R.string.nav_search)) },
-        unselectedIcon = { Icon(Icons.Outlined.Search, stringResource(edu.metrostate.ics342.mediatracker.R.string.nav_search)) }),
-    BottomNavItem(Routes.LIBRARY, edu.metrostate.ics342.mediatracker.R.string.nav_library,
-        selectedIcon   = { Icon(Icons.AutoMirrored.Filled.MenuBook,   stringResource(edu.metrostate.ics342.mediatracker.R.string.nav_library)) },
-        unselectedIcon = { Icon(Icons.AutoMirrored.Outlined.MenuBook, stringResource(edu.metrostate.ics342.mediatracker.R.string.nav_library)) }),
-    BottomNavItem(Routes.CONNECTIONS, edu.metrostate.ics342.mediatracker.R.string.nav_people,
-        selectedIcon   = { Icon(Icons.Filled.Group,    stringResource(edu.metrostate.ics342.mediatracker.R.string.nav_people)) },
-        unselectedIcon = { Icon(Icons.Outlined.Group,  stringResource(edu.metrostate.ics342.mediatracker.R.string.nav_people)) }),
-    BottomNavItem(Routes.MY_PROFILE, edu.metrostate.ics342.mediatracker.R.string.nav_profile,
-        selectedIcon   = { Icon(Icons.Filled.Person,   stringResource(edu.metrostate.ics342.mediatracker.R.string.nav_profile)) },
-        unselectedIcon = { Icon(Icons.Outlined.Person, stringResource(edu.metrostate.ics342.mediatracker.R.string.nav_profile)) }),
-)
+sealed class NavItem(val route: String, val icon: ImageVector, val labelRes: Int) {
+    object Feed : NavItem(Routes.ACTIVITY_FEED, Icons.Default.Home, R.string.nav_feed)
+    object Search : NavItem(Routes.SEARCH, Icons.Default.Search, R.string.nav_search)
+    object Library : NavItem(Routes.LIBRARY, Icons.Default.CollectionsBookmark, R.string.nav_library)
+    object Connections : NavItem(Routes.CONNECTIONS, Icons.Default.People, R.string.nav_people)
+    object Profile : NavItem(Routes.MY_PROFILE, Icons.Default.Person, R.string.nav_profile)
+}
 
 @Composable
-fun BottomNavBar(navController: NavController) {
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = navBackStackEntry?.destination
+fun BottomNavBar(
+    navController: NavController,
+    modifier: Modifier = Modifier
+) {
+    val items = listOf(
+        NavItem.Feed,
+        NavItem.Search,
+        NavItem.Library,
+        NavItem.Connections,
+        NavItem.Profile
+    )
 
-    NavigationBar {
-        bottomNavItems.forEach { item ->
-            //fix issue for argument to the route
-            val isSelected = currentDestination?.hierarchy?.any {it.route == item.route} == true
+    NavigationBar(modifier = modifier) {
+        val navBackStackEntry by navController.currentBackStackEntryAsState()
+        val currentRoute = navBackStackEntry?.destination?.route
 
+        items.forEach { item ->
             NavigationBarItem(
-                selected = isSelected,
-                onClick  = {
+                icon = { Icon(item.icon, contentDescription = null) },
+                label = { Text(stringResource(item.labelRes)) },
+                selected = currentRoute == item.route,
+                onClick = {
                     navController.navigate(item.route) {
-                        popUpTo(navController.graph.startDestinationId) { saveState = true }
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
                         launchSingleTop = true
-                        restoreState    = true
+                        restoreState = true
                     }
-                },
-                icon  = { if (isSelected) item.selectedIcon() else item.unselectedIcon() },
-                label = { Text(stringResource(item.labelRes)) }
+                }
             )
         }
     }

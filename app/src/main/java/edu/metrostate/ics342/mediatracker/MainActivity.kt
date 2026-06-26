@@ -4,8 +4,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import edu.metrostate.ics342.mediatracker.navigation.MediaTrackerNavGraph
 import edu.metrostate.ics342.mediatracker.theme.MediaTrackerTheme
@@ -15,8 +17,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MediaTrackerTheme{
-                AppRoot()
+            MediaTrackerTheme {
+                Surface(modifier = Modifier.fillMaxSize()) {
+                    AppRoot()
+                }
             }
         }
     }

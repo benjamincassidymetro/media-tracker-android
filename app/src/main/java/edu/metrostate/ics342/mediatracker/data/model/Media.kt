@@ -2,7 +2,10 @@ package edu.metrostate.ics342.mediatracker.data.model
 
 import android.content.Context
 import edu.metrostate.ics342.mediatracker.R
+import kotlinx.serialization.Serializable
+import kotlin.serialization.Serializable
 
+@Serializable
 data class Media(
     val id: Int,
     val mediaType: String, // "book", "movie", or "show"
