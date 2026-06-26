@@ -7,35 +7,34 @@
 
 ## Commits This Week
 
-**Link: https://github.com/fascineh1/media-tracker-android/pull/2/commits **
+Link: https://github.com/fascineh1/media-tracker-android/pull/2/commits 
 
 ---
 
 ## Code Review
 
-<!-- Every week you leave a review on a pod mate's pull request. Fill in both parts below.
-     Part 1 is the link — I will verify the review exists on GitHub.
-     Part 2 is your written assessment — what you actually looked at and what you found. -->
-
-**Reviewed:** *Kenan Port*
-**Link to my review:**
+**Reviewed:** Kenan Port
+Link to my review: https://github.com/Zabzar22/media-tracker-android/pull/6 
 
 ### What I Looked At
 
-I reviewed Kenan's implementation of the authentication and networking models. 
-I focused on how the API request and response classes were structured because I was implementing similar functionality in my own project this week.
+I reviewed Kenan Port's implementation of `FakeSearchResults.kt`, which adds a larger fake dataset for the search feature. 
+I focused on how the sample data was organized and how it supports testing the search screen, media filtering, and 
+pagination before the application is connected to the real API.
+
 
 ### What I Noticed
 
-One thing I noticed was that every API model class used for Retrofit requests and responses was annotated with @Serializable. 
-This included classes such as TokenRequest, TokenResponse, and AuthResponse. 
-Seeing the annotations consistently applied made me realize that Kotlin Serialization requires every request and response model to be explicitly marked for serialization. 
-Without those annotations, Retrofit cannot properly convert objects to and from JSON at runtime.
+I noticed that the fake dataset includes a good variety of books, movies, and TV shows with consistent `Media` objects. 
+Using a larger dataset makes it much easier to verify that filtering works correctly and that pagination or infinite scrolling behaves as expected. 
+The file is easy to follow, although it could become harder to maintain if the dataset continues to grow.
+
 
 ### Comments I Left
 
-<!-- Briefly summarize the comments you left on the PR. If you left a positive comment,
-     say what it was. If you left a suggestion, say what you suggested and why. -->
+I complimented Kenan on expanding the fake dataset because it improves testing for filtering, pagination, and infinite scrolling. 
+I also suggested that if the fake dataset continues to grow, it could be organized into separate collections or files to improve 
+readability and make future maintenance easier.
 
 ---
 
@@ -60,9 +59,9 @@ I would like a deeper understanding of how experienced Android developers decide
 
 ## Anything Else *(optional)*
 
-<!-- Did you help a pod mate work through something? Did you discover something cool or frustrating?
-     Did something from a previous week finally click? This is a good place to put it. -->
-
+This week helped reinforce how the ViewModel, repository, and API models work together. 
+Comparing my implementation with my pod mate's code and incorporating feedback made me more confident in 
+organizing Android applications using the MVVM architecture.
 ---
 
 ## Rubric
