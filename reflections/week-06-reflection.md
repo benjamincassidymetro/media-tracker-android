@@ -44,10 +44,9 @@ While implementing SearchScreen.kt, I initially filtered the media list directly
 As I continued working, I realized that the UI became easier to understand when the SearchViewModel owned the search results and the Composable simply displayed the current state. 
 Observing the ViewModel with collectAsState() made the screen cleaner because the Composable was responsible only for rendering the interface instead of managing application logic.
 
-Another issue I encountered involved my API model classes. After submitting my pull request, I received feedback from Kenan Port pointing out that my request and response models were missing the @Serializable annotation. 
-I originally thought importing the Kotlin Serialization library was enough, but after comparing my code with the instructor's authentication example, 
-I learned that every model class—including Media, LibraryItem, Review, User, ActivityEvent, TokenRequest, TokenResponse, AuthResponse, and CreateUserRequest—must be explicitly annotated. 
-Updating each file helped me understand how Retrofit and Kotlin Serialization work together to convert Kotlin objects into JSON.
+After submitting my pull request, Kenan pointed out that my SearchViewModel is still returning four hard-coded search results instead of supporting paginated API data, and that I created a local MediaItem class instead of using the shared Media model. 
+I had been focused on getting the Search screen working visually, so I hadn't thought as much about keeping my implementation aligned with the overall application architecture. 
+His feedback helped me realize that using the shared models and designing the ViewModel around the API from the beginning will make the search feature easier to maintain and integrate once the live API is connected.
 ---
 
 ## One Thing I'm Still Confused About

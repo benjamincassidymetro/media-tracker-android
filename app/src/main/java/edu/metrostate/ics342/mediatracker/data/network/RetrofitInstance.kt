@@ -1,30 +1,24 @@
 package edu.metrostate.ics342.mediatracker.data.network
 
-import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
-import kotlinx.serialization.json.Json
-import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitInstance {
 
-    private val json = Json {
-        ignoreUnknownKeys = true
-        encodeDefaults    = true
-    }
-
     private val client = OkHttpClient.Builder()
-        .addInterceptor(HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-        })
+        .addInterceptor(
+            HttpLoggingInterceptor().apply {
+                level = HttpLoggingInterceptor.Level.BODY
+            }
+        )
         .build()
 
-    private val retrofit = Retrofit.Builder()
+    val api: UserApiService = Retrofit.Builder()
         .baseUrl(ApiConstants.BASE_URL)
         .client(client)
-        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+        .addConverterFactory(GsonConverterFactory.create())
         .build()
-
-    val userApiService: UserApiService = retrofit.create(UserApiService::class.java)
+        .create(UserApiService::class.java)
 }

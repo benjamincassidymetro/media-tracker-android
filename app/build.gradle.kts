@@ -18,6 +18,9 @@ extensions.configure<ApplicationExtension> {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "API_CLIENT_ID", "\"\"")
+        buildConfigField("String", "API_CLIENT_SECRET", "\"\"")
     }
 
     buildTypes {
@@ -35,6 +38,7 @@ extensions.configure<ApplicationExtension> {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
