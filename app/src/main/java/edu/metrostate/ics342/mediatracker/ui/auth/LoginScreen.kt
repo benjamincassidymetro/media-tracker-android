@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,6 +64,7 @@ fun LoginScreen(
             onValueChange = viewModel::onEmailChange,
             label         = { Text(stringResource(edu.metrostate.ics342.mediatracker.R.string.email_label)) },
             singleLine    = true,
+            shape = RoundedCornerShape(12.dp),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email,
                 imeAction    = ImeAction.Next
@@ -80,6 +82,7 @@ fun LoginScreen(
             onValueChange = viewModel::onPasswordChange,
             label         = { Text(stringResource(edu.metrostate.ics342.mediatracker.R.string.password_label)) },
             singleLine    = true,
+            shape = RoundedCornerShape(12.dp),
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,
@@ -100,9 +103,12 @@ fun LoginScreen(
         Spacer(Modifier.height(24.dp))
 
         Button(
-            onClick  = { focusManager.clearFocus(); viewModel.onLoginClick() },
-            enabled  = !isLoading,
-            modifier = Modifier.fillMaxWidth().height(48.dp)
+            onClick = { focusManager.clearFocus(); viewModel.onLoginClick() },
+            enabled = !isLoading,
+            shape = RoundedCornerShape(50),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
         ) {
             if (isLoading) {
                 CircularProgressIndicator(
