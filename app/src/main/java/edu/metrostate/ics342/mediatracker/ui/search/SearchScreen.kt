@@ -49,29 +49,42 @@ fun SearchScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        OutlinedTextField(
-            value = query,
-            onValueChange = { query = it },
-            placeholder = {
-                Text("Search Books, Movies, Shows...")
-            },
-            singleLine = true,
-            shape = RoundedCornerShape(50),
-            modifier = Modifier.fillMaxWidth()
-        )
+       OutlinedTextField(
+    value = query,
+    onValueChange = { query = it },
+    placeholder = { Text("Search Books, Movies, Shows...") },
+    singleLine = true,
+    shape = RoundedCornerShape(28.dp),
+    colors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = MaterialTheme.colorScheme.primary
+    ),
+    modifier = Modifier.fillMaxWidth()
+)
 
         Spacer(Modifier.height(12.dp))
 
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp))
-        {
-            items(listOf("All", "Book", "Movie", "Show")) { type ->
-                FilterChip(
-                    selected = selectedType == type,
-                    onClick = { selectedType = type },
-                    label = { Text(type.replaceFirstChar { it.uppercase() }) }
-                )
-            }
-        }
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    items(listOf("All", "Book", "Movie", "Show")) { type ->
+        FilterChip(
+            selected = selectedType == type,
+            onClick = { selectedType = type },
+            label = { Text(type.replaceFirstChar { it.uppercase() }) },
+            shape = RoundedCornerShape(8.dp),
+            colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                selectedLabelColor = MaterialTheme.colorScheme.primary,
+                containerColor = MaterialTheme.colorScheme.surface,
+                labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+            ),
+            border = FilterChipDefaults.filterChipBorder(
+                enabled = true,
+                selected = selectedType == type,
+                borderColor = MaterialTheme.colorScheme.outline,
+                selectedBorderColor = MaterialTheme.colorScheme.primaryContainer
+            )
+        )
+    }
+}
 
         Spacer(Modifier.height(16.dp))
 
@@ -81,25 +94,28 @@ fun SearchScreen(
 
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(filteredMedia) { media ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onMediaClick(media.id) },
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text(
-                            media.title,
-                            style = MaterialTheme.typography.titleMedium
-                        )
+         Card(
+    modifier = Modifier
+        .fillMaxWidth()
+        .clickable { onMediaClick(media.id) },
+    shape = RoundedCornerShape(12.dp),
+    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+) {
+    Column(Modifier.padding(16.dp)) {
+        Text(
+            text = media.title,
+            style = MaterialTheme.typography.titleMedium
+        )
 
-                        Text(
-                            media.subtitle,
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                }
-            }
-        }
+        Text(
+            text = "${media.type} • ${media.year} • ★ ${media.rating}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Text(
+            text = media.subtitle,
+            style = MaterialTheme.typography.bodySmall
+        )
     }
 }
