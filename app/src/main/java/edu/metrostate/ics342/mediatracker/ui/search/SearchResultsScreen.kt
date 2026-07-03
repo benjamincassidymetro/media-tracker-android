@@ -1,12 +1,14 @@
 package edu.metrostate.ics342.mediatracker.ui.search
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,6 +30,22 @@ fun SearchResultsScreen(
     var searchBarQuery by remember { mutableStateOf(initialQuery) }
     val results by viewModel.results.collectAsState()
     val selectedType by viewModel.selectedType.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    val listState = rememberLazyListState()
+
+    val shouldLoadMore = remember {
+        derivedStateOf {
+            val lastVisibleItemIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+            lastVisibleItemIndex >= results.size - 5 && results.isNotEmpty() && !isLoading
+        }
+    }
+
+    LaunchedEffect(shouldLoadMore.value) {
+        if (shouldLoadMore.value) {
+            viewModel.loadNextPage()
+        }
+    }
 
 
     LaunchedEffect(initialQuery) {
@@ -53,6 +71,13 @@ fun SearchResultsScreen(
                 modifier = Modifier.weight(1f),
                 placeholder = { Text(stringResource(R.string.search_hint)) },
                 leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (searchBarQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchBarQuery = "" }) {
+                            Icon(Icons.Default.Close, contentDescription = "Clear search")
+                        }
+                    }
+                },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = {
@@ -67,25 +92,49 @@ fun SearchResultsScreen(
             modifier = Modifier.padding(horizontal = 16.dp)
         )
 
-        Text(
-            text = stringResource(R.string.search_results_count, results.size),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-        )
-
-        // Column instead of LazyColumn — intentional for the Week 6 teaching demo.
-        // Students will see why this doesn't scale before Regroup 1.
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-        ) {
-            results.forEach { media ->
-                MediaResultCard(
-                    media = media,
-                    onClick = { onMediaClick(media.id) }
+        if (isLoading && results.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else if (results.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(
+                    text = stringResource(R.string.search_no_results),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+        } else {
+            Text(
+                text = stringResource(R.string.search_results_count, results.size),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                state = listState
+            ) {
+                items(results) { media ->
+                    MediaResultCard(
+                        media = media,
+                        onClick = { onMediaClick(media.id) }
+                    )
+                }
+
+                if (isLoading) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                }
             }
         }
     }

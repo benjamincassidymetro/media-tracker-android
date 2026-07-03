@@ -81,7 +81,7 @@ fun MediaDetailScreen(
 
             // Title and Creator
             Text(
-                text = "Dune",
+                text = "Mai ",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )

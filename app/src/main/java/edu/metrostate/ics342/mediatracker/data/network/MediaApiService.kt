@@ -3,7 +3,7 @@ package edu.metrostate.ics342.mediatracker.data.network
 import edu.metrostate.ics342.mediatracker.data.model.Media
 import retrofit2.http.GET
 import retrofit2.http.Query
-import okhttp3.Response
+import retrofit2.Response
 
 
 interface MediaApiService {

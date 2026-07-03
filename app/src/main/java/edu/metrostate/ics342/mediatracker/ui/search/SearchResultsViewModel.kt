@@ -40,6 +40,11 @@ class SearchResultsViewModel(application: Application) :
         loadNextPage()
     }
 
+    fun onTypeSelect(type: String) {
+        _selectedType.value = type
+        search(currentQuery)
+    }
+
     fun loadNextPage() {
         if (_isLoading.value || !hasMore) return
         viewModelScope.launch {
