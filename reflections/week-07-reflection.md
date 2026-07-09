@@ -28,9 +28,13 @@
 <!-- Walk through the code you reviewed. What was the PR trying to do? Which files or
      functions did you focus on? 
 
--->I reviewed Kenan Port's implementation of the Week 7 Media Detail screen. 
-I focused primarily on the MediaDetailScreen.kt and MediaDetailViewModel.kt files to compare his layout against the Screen 07 wireframe. 
-I also checked how the media details were loaded into the UI, how the stat grid changed based on media type, and whether the Write Review navigation and review section were implemented correctly.
+--> I reviewed Kenan Port's implementation of the Week 7 Media Detail screen. 
+I focused primarily on MediaDetailScreen.kt, MediaDetail.kt, FakeMediaRepository.kt, and the new string resources in strings.xml. 
+I compared the implementation against the Screen 07 wireframe to verify that all required UI elements were present, 
+including the top app bar, cover image, rating section, action buttons, stat grid, and review cards. 
+I also examined how the hardcoded MediaDetail object and sample reviews were used to populate the screen before API integration.
+
+
 
 
 ### What I Noticed
@@ -48,10 +52,9 @@ I also checked that the Media Detail screen loaded the selected media item prope
 <!-- Briefly summarize the comments you left on the PR. If you left a positive comment,
      say what it was. If you left a suggestion, say what you suggested and why. 
 
---> I complimented the overall organization of the code and the clean separation of UI components. 
-I also suggested making sure values such as page count, runtime, season count, description, 
-and review count are read directly from the Media model whenever possible instead of relying on helper functions,
-since that will make the transition to the API implementation much easier.
+--> I complimented the organization of the Media Detail screen and pointed out that the reusable composable functions made the implementation easy to follow. 
+I also noted that the dynamic stat grid correctly adapts to different media types and that the ViewModel's fallback to the fake repository 
+makes UI testing much easier while the API integration is still in progress.
 
 ---
 

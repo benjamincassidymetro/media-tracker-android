@@ -5,6 +5,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarBorder
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 // ── STUB — Students build this in Week 8 ─────────────────────────────────────
 //
@@ -21,11 +28,18 @@ fun WriteReviewScreen(
     mediaId: Int,
     onNavigateBack: () -> Unit
 ) {
+    val viewModel: WriteReviewViewModel = viewModel()
+    val rating by viewModel.rating.collectAsState()
+    val reviewText by viewModel.reviewText.collectAsState()
+    val shareToFeed by viewModel.shareToFeed.collectAsState()
+
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Text("Write Review is not implemented yet.\n(mediaId = $mediaId)",
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Text(
+            "Write Review is not implemented yet.\n(mediaId = $mediaId)",
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
     }
 }
