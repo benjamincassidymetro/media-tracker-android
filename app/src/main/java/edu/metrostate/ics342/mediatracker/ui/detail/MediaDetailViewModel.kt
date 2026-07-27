@@ -4,279 +4,216 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import edu.metrostate.ics342.mediatracker.data.model.LibraryStatus
 import edu.metrostate.ics342.mediatracker.data.model.Media
-import edu.metrostate.ics342.mediatracker.data.network.AddFavoriteRequest
-import edu.metrostate.ics342.mediatracker.data.network.AddToLibraryRequest
-import edu.metrostate.ics342.mediatracker.data.network.RetrofitInstance
+import edu.metrostate.ics342.mediatracker.data.repository.ApiException
+import edu.metrostate.ics342.mediatracker.data.repository.DefaultMediaRepository
+import edu.metrostate.ics342.mediatracker.data.repository.MediaRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class MediaDetailViewModel : ViewModel() {
+sealed class MediaDetailUiState {
+    data object Loading : MediaDetailUiState()
 
-    private val api = RetrofitInstance.mediaApi
+    data class Success(
+        val media: Media,
+        val libraryStatus: LibraryStatus?,
+        val isFavorite: Boolean
+    ) : MediaDetailUiState()
 
-    private val _media = MutableStateFlow<Media?>(null)
-    val media: StateFlow<Media?> = _media.asStateFlow()
+    data object NotFound : MediaDetailUiState()
 
-    private val _libraryStatus = MutableStateFlow<LibraryStatus?>(null)
-    val libraryStatus: StateFlow<LibraryStatus?> =
-        _libraryStatus.asStateFlow()
+    data class Error(
+        val message: String
+    ) : MediaDetailUiState()
+}
 
-    private val _isFavorite = MutableStateFlow(false)
-    val isFavorite: StateFlow<Boolean> =
-        _isFavorite.asStateFlow()
+class MediaDetailViewModel(
+    private val repository: MediaRepository = DefaultMediaRepository()
+) : ViewModel() {
 
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> =
-        _isLoading.asStateFlow()
+    private val _uiState =
+        MutableStateFlow<MediaDetailUiState>(
+            MediaDetailUiState.Loading
+        )
 
-    private val _isAddingToLibrary = MutableStateFlow(false)
-    val isAddingToLibrary: StateFlow<Boolean> =
-        _isAddingToLibrary.asStateFlow()
+    val uiState: StateFlow<MediaDetailUiState> =
+        _uiState.asStateFlow()
 
-    private val _isSavingFavorite = MutableStateFlow(false)
-    val isSavingFavorite: StateFlow<Boolean> =
-        _isSavingFavorite.asStateFlow()
+    private val _actionError =
+        MutableStateFlow<String?>(null)
 
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> =
-        _errorMessage.asStateFlow()
+    val actionError: StateFlow<String?> =
+        _actionError.asStateFlow()
 
     private var currentMediaId: Int? = null
 
-    /**
-     * Loads:
-     * GET /media/{mediaId}
-     * GET /library/{mediaId}
-     * GET /favorites/{mediaId}
-     */
-    fun loadMedia(mediaId: Int) {
+    fun load(mediaId: Int) {
         currentMediaId = mediaId
 
         viewModelScope.launch {
-            _isLoading.value = true
-            _errorMessage.value = null
+            _uiState.value = MediaDetailUiState.Loading
 
             try {
-                val detailDeferred = async {
-                    api.getMediaDetail(mediaId)
+                val mediaDeferred = async {
+                    repository.getMediaDetail(mediaId)
                 }
 
                 val libraryDeferred = async {
-                    api.getLibraryItem(mediaId)
+                    repository.getLibraryItem(mediaId)
                 }
 
                 val favoriteDeferred = async {
-                    api.getFavorite(mediaId)
+                    repository.getFavorite(mediaId)
                 }
 
-                val detailResponse = detailDeferred.await()
+                val media = mediaDeferred.await()
+                val libraryItem = libraryDeferred.await()
+                val favorite = favoriteDeferred.await()
 
-                if (!detailResponse.isSuccessful) {
-                    _media.value = null
-
-                    _errorMessage.value = when (detailResponse.code()) {
-                        404 -> "Media not found."
-                        401 -> "Your session has expired. Please sign in again."
-                        else -> {
-                            "Unable to load media. " +
-                                    "HTTP ${detailResponse.code()}: " +
-                                    detailResponse.message()
-                        }
+                _uiState.value = MediaDetailUiState.Success(
+                    media = media,
+                    libraryStatus = libraryItem?.status,
+                    isFavorite = favorite != null
+                )
+            } catch (exception: ApiException) {
+                _uiState.value =
+                    if (exception.code == 404) {
+                        MediaDetailUiState.NotFound
+                    } else {
+                        MediaDetailUiState.Error(
+                            apiErrorMessage(exception)
+                        )
                     }
-
-                    return@launch
-                }
-
-                val detail = detailResponse.body()
-
-                if (detail == null) {
-                    _media.value = null
-                    _errorMessage.value =
-                        "The server returned an empty media response."
-                    return@launch
-                }
-
-                _media.value = detail
-
-                val libraryResponse = libraryDeferred.await()
-
-                _libraryStatus.value = when {
-                    libraryResponse.isSuccessful ->
-                        libraryResponse.body()?.status
-
-                    libraryResponse.code() == 404 ->
-                        null
-
-                    else ->
-                        null
-                }
-
-                val favoriteResponse = favoriteDeferred.await()
-
-                _isFavorite.value = when {
-                    favoriteResponse.isSuccessful ->
-                        favoriteResponse.body() != null
-
-                    favoriteResponse.code() == 404 ->
-                        false
-
-                    else ->
-                        false
-                }
             } catch (exception: Exception) {
-                _media.value = null
-                _errorMessage.value =
-                    exception.message ?: "Unable to load media."
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
-    /**
-     * Called by MediaDetailScreen.
-     *
-     * POST /library
-     * Body: mediaId + status "want_to"
-     */
-    fun addToLibrary(mediaId: Int) {
-        currentMediaId = mediaId
-        addToWantTo()
-    }
-
-    /**
-     * Adds the current media item to Want To.
-     */
-    fun addToWantTo() {
-        val mediaId = currentMediaId ?: return
-
-        if (_isAddingToLibrary.value) return
-        if (_libraryStatus.value != null) return
-
-        viewModelScope.launch {
-            _isAddingToLibrary.value = true
-            _errorMessage.value = null
-
-            try {
-                val response = api.addToLibrary(
-                    AddToLibraryRequest(
-                        mediaId = mediaId,
-                        status = "want_to"
+                _uiState.value =
+                    MediaDetailUiState.Error(
+                        exception.message
+                            ?: "Unable to load media."
                     )
-                )
-
-                when {
-                    response.isSuccessful -> {
-                        _libraryStatus.value =
-                            response.body()?.status ?: LibraryStatus.WANT_TO
-                    }
-
-                    response.code() == 409 -> {
-                        refreshLibraryStatus(mediaId)
-                    }
-
-                    response.code() == 401 -> {
-                        _errorMessage.value =
-                            "Your session has expired. Please sign in again."
-                    }
-
-                    else -> {
-                        _errorMessage.value =
-                            "Unable to add item to library. " +
-                                    "HTTP ${response.code()}: ${response.message()}"
-                    }
-                }
-            } catch (exception: Exception) {
-                _errorMessage.value =
-                    exception.message ?: "Unable to add item to library."
-            } finally {
-                _isAddingToLibrary.value = false
             }
         }
     }
 
     /**
-     * Called by MediaDetailScreen.
-     *
-     * POST /favorites
-     * Body: mediaId
+     * Optimistically adds the media item to Want To.
      */
-    fun addFavorite(mediaId: Int) {
-        currentMediaId = mediaId
-        saveFavorite()
+    fun addToLibrary() {
+        val mediaId = currentMediaId ?: return
+        val state = _uiState.value as? MediaDetailUiState.Success
+            ?: return
+
+        if (state.libraryStatus != null) {
+            return
+        }
+
+        val previousState = state
+
+        _uiState.value = state.copy(
+            libraryStatus = LibraryStatus.WANT_TO
+        )
+
+        viewModelScope.launch {
+            try {
+                val item = repository.addToLibrary(
+                    mediaId = mediaId,
+                    status = LibraryStatus.WANT_TO
+                )
+
+                val current =
+                    _uiState.value as? MediaDetailUiState.Success
+                        ?: return@launch
+
+                _uiState.value = current.copy(
+                    libraryStatus =
+                        item?.status ?: LibraryStatus.WANT_TO
+                )
+            } catch (exception: Exception) {
+                // Roll back the optimistic update.
+                _uiState.value = previousState
+                _actionError.value =
+                    actionErrorMessage(
+                        exception,
+                        "Unable to add item to library."
+                    )
+            }
+        }
     }
 
     /**
-     * Saves the current media item as a favorite.
+     * Optimistically toggles the favorite state.
      */
-    fun saveFavorite() {
+    fun toggleFavorite() {
         val mediaId = currentMediaId ?: return
+        val state = _uiState.value as? MediaDetailUiState.Success
+            ?: return
 
-        if (_isSavingFavorite.value) return
-        if (_isFavorite.value) return
+        val previousState = state
+        val shouldFavorite = !state.isFavorite
+
+        _uiState.value = state.copy(
+            isFavorite = shouldFavorite
+        )
 
         viewModelScope.launch {
-            _isSavingFavorite.value = true
-            _errorMessage.value = null
-
             try {
-                val response = api.addFavorite(
-                    AddFavoriteRequest(mediaId = mediaId)
-                )
-
-                when {
-                    response.isSuccessful -> {
-                        _isFavorite.value = true
-                    }
-
-                    response.code() == 409 -> {
-                        // Already saved is an acceptable result.
-                        _isFavorite.value = true
-                    }
-
-                    response.code() == 401 -> {
-                        _errorMessage.value =
-                            "Your session has expired. Please sign in again."
-                    }
-
-                    else -> {
-                        _errorMessage.value =
-                            "Unable to save favorite. " +
-                                    "HTTP ${response.code()}: ${response.message()}"
-                    }
+                if (shouldFavorite) {
+                    repository.addFavorite(mediaId)
+                } else {
+                    repository.removeFavorite(mediaId)
                 }
             } catch (exception: Exception) {
-                _errorMessage.value =
-                    exception.message ?: "Unable to save favorite."
-            } finally {
-                _isSavingFavorite.value = false
+                // Restore the original heart state.
+                _uiState.value = previousState
+                _actionError.value =
+                    actionErrorMessage(
+                        exception,
+                        if (shouldFavorite) {
+                            "Unable to save favorite."
+                        } else {
+                            "Unable to remove favorite."
+                        }
+                    )
             }
         }
     }
 
     fun retry() {
-        currentMediaId?.let(::loadMedia)
+        currentMediaId?.let(::load)
     }
 
-    fun clearError() {
-        _errorMessage.value = null
+    fun clearActionError() {
+        _actionError.value = null
     }
 
-    private suspend fun refreshLibraryStatus(mediaId: Int) {
-        val response = api.getLibraryItem(mediaId)
+    private fun apiErrorMessage(
+        exception: ApiException
+    ): String {
+        return when (exception.code) {
+            401 -> {
+                "Your session has expired. Please sign in again."
+            }
 
-        _libraryStatus.value = when {
-            response.isSuccessful ->
-                response.body()?.status
+            else -> exception.message
+        }
+    }
 
-            response.code() == 404 ->
-                null
+    private fun actionErrorMessage(
+        exception: Exception,
+        fallback: String
+    ): String {
+        return when {
+            exception is ApiException &&
+                    exception.code == 401 -> {
+                "Your session has expired. Please sign in again."
+            }
 
-            else ->
-                _libraryStatus.value
+            !exception.message.isNullOrBlank() -> {
+                exception.message.orEmpty()
+            }
+
+            else -> fallback
         }
     }
 }

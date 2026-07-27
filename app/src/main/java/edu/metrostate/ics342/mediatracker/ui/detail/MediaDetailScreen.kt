@@ -1,5 +1,6 @@
 package edu.metrostate.ics342.mediatracker.ui.detail
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,43 +11,47 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material3.AssistChip
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import edu.metrostate.ics342.mediatracker.R
 import edu.metrostate.ics342.mediatracker.data.model.LibraryStatus
 import edu.metrostate.ics342.mediatracker.data.model.Media
+import androidx.compose.ui.res.stringResource
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,269 +61,106 @@ fun MediaDetailScreen(
     onWriteReview: (Int) -> Unit,
     viewModel: MediaDetailViewModel = viewModel()
 ) {
-    val media by viewModel.media.collectAsStateWithLifecycle()
-    val libraryStatus by viewModel.libraryStatus.collectAsStateWithLifecycle()
-    val isFavorite by viewModel.isFavorite.collectAsStateWithLifecycle()
-    val isAddingToLibrary by viewModel.isAddingToLibrary.collectAsStateWithLifecycle()
-    val isSavingFavorite by viewModel.isSavingFavorite.collectAsStateWithLifecycle()
-    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
-    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsState()
+    val actionError by viewModel.actionError.collectAsState()
+
+    val snackbarHostState = remember {
+        SnackbarHostState()
+    }
 
     LaunchedEffect(mediaId) {
-        viewModel.loadMedia(mediaId)
+        viewModel.load(mediaId)
     }
 
-    /*
-     * Loading is full screen only during the initial media request.
-     * The existing content remains visible during button operations.
-     */
-    if (isLoading && media == null) {
-        FullScreenLoading()
-        return
+    LaunchedEffect(actionError) {
+        actionError?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearActionError()
+        }
     }
-
-    /*
-     * A loading failure replaces the screen only when no media was loaded.
-     * Button failures are shown inside the successful detail layout.
-     */
-    if (media == null) {
-        FullScreenError(
-            message = errorMessage ?: "Media not found.",
-            onRetry = viewModel::retry,
-            onNavigateBack = onNavigateBack
-        )
-        return
-    }
-
-    val currentMedia = media ?: return
 
     Scaffold(
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState
+            )
+        },
         topBar = {
             TopAppBar(
                 title = {},
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(
+                        onClick = onNavigateBack
+                    ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            imageVector =
+                                Icons.AutoMirrored.Outlined.ArrowBack,
+                            contentDescription =
+                                stringResource(R.string.action_back)
                         )
                     }
                 },
                 actions = {
-                    IconButton(onClick = {}) {
+                    IconButton(
+                        onClick = {
+                            // Reserved for the media overflow menu.
+                        }
+                    ) {
                         Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = "More options"
+                            imageVector = Icons.Outlined.MoreVert,
+                            contentDescription =
+                                stringResource(
+                                    R.string.action_more_options
+                                )
                         )
                     }
                 }
             )
         }
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            CoverPlaceholder()
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = currentMedia.title,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-
-            Text(
-                text = currentMedia.creatorCredit(),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            RatingRow(currentMedia)
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            MediaActionButtons(
-                libraryStatus = libraryStatus,
-                isFavorite = isFavorite,
-                isAddingToLibrary = isAddingToLibrary,
-                isSavingFavorite = isSavingFavorite,
-                onAddToLibrary = viewModel::addToWantTo,
-                onSaveFavorite = viewModel::saveFavorite
-            )
-
-            /*
-             * An add/save error should not remove otherwise valid media content.
-             */
-            if (errorMessage != null) {
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Text(
-                    text = errorMessage.orEmpty(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                TextButton(onClick = viewModel::clearError) {
-                    Text("Dismiss")
+            when (val state = uiState) {
+                MediaDetailUiState.Loading -> {
+                    LoadingContent()
                 }
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            SectionLabel("ABOUT")
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Text(
-                text = currentMedia.descriptionText(),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            StatGrid(currentMedia)
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                SectionLabel(
-                    text = "REVIEWS (${currentMedia.reviewCount})",
-                    modifier = Modifier.weight(1f)
-                )
-
-                TextButton(
-                    onClick = {
-                        onWriteReview(currentMedia.id)
-                    }
-                ) {
-                    Text("+ Write Review")
-                }
-            }
-
-            FakeReviewCard(
-                avatar = "A",
-                username = "@alice_reads",
-                time = "2d ago",
-                rating = "★★★★★",
-                review = "A timeless classic. Fresh every time."
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            FakeReviewCard(
-                avatar = "B",
-                username = "@bob_books",
-                time = "1w ago",
-                rating = "★★★★☆",
-                review = "Great world-building, slow in the middle."
-            )
-        }
-    }
-}
-
-@Composable
-private fun MediaActionButtons(
-    libraryStatus: LibraryStatus?,
-    isFavorite: Boolean,
-    isAddingToLibrary: Boolean,
-    isSavingFavorite: Boolean,
-    onAddToLibrary: () -> Unit,
-    onSaveFavorite: () -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Button(
-            onClick = onAddToLibrary,
-            enabled = libraryStatus == null && !isAddingToLibrary,
-            modifier = Modifier.weight(1f)
-        ) {
-            when {
-                isAddingToLibrary -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
+                MediaDetailUiState.NotFound -> {
+                    MessageContent(
+                        message = stringResource(
+                            R.string.error_media_not_found
+                        ),
+                        buttonText = stringResource(
+                            R.string.action_retry
+                        ),
+                        onButtonClick = viewModel::retry
                     )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Text("Adding")
                 }
 
-                libraryStatus != null -> {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
+                is MediaDetailUiState.Error -> {
+                    MessageContent(
+                        message = state.message,
+                        buttonText = stringResource(
+                            R.string.action_retry
+                        ),
+                        onButtonClick = viewModel::retry
                     )
-
-                    Spacer(modifier = Modifier.width(6.dp))
-
-                    Text(libraryStatus.buttonText())
                 }
 
-                else -> {
-                    Text("+ Want To")
-                }
-            }
-        }
-
-        OutlinedButton(
-            onClick = onSaveFavorite,
-            enabled = !isFavorite && !isSavingFavorite,
-            modifier = Modifier.weight(1f)
-        ) {
-            when {
-                isSavingFavorite -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
-                        strokeWidth = 2.dp
+                is MediaDetailUiState.Success -> {
+                    MediaDetailSuccessContent(
+                        state = state,
+                        onAddToLibrary =
+                            viewModel::addToLibrary,
+                        onToggleFavorite =
+                            viewModel::toggleFavorite,
+                        onWriteReview = {
+                            onWriteReview(mediaId)
+                        }
                     )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Text("Saving")
-                }
-
-                isFavorite -> {
-                    Icon(
-                        imageVector = Icons.Default.Favorite,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Text("Saved")
-                }
-
-                else -> {
-                    Icon(
-                        imageVector = Icons.Outlined.FavoriteBorder,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Text("Save")
                 }
             }
         }
@@ -326,7 +168,7 @@ private fun MediaActionButtons(
 }
 
 @Composable
-private fun FullScreenLoading() {
+private fun LoadingContent() {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -336,279 +178,408 @@ private fun FullScreenLoading() {
 }
 
 @Composable
-private fun FullScreenError(
+private fun MessageContent(
     message: String,
-    onRetry: () -> Unit,
-    onNavigateBack: () -> Unit
+    buttonText: String,
+    onButtonClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .padding(32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = message,
             style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.error
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(
+            modifier = Modifier.height(16.dp)
+        )
 
-        Button(onClick = onRetry) {
-            Text("Retry")
-        }
-
-        TextButton(onClick = onNavigateBack) {
-            Text("Go Back")
+        Button(
+            onClick = onButtonClick
+        ) {
+            Text(text = buttonText)
         }
     }
 }
 
 @Composable
-private fun CoverPlaceholder() {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        ),
-        modifier = Modifier.size(
-            width = 120.dp,
-            height = 150.dp
+private fun MediaDetailSuccessContent(
+    state: MediaDetailUiState.Success,
+    onAddToLibrary: () -> Unit,
+    onToggleFavorite: () -> Unit,
+    onWriteReview: () -> Unit
+) {
+    val media = state.media
+    val creatorText = media.creatorText()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp)
+            .padding(bottom = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(
+            modifier = Modifier.height(12.dp)
         )
+
+        MediaArtworkPlaceholder()
+
+        Spacer(
+            modifier = Modifier.height(18.dp)
+        )
+
+        Text(
+            text = media.title,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+
+        if (creatorText.isNotBlank()) {
+            Spacer(
+                modifier = Modifier.height(4.dp)
+            )
+
+            Text(
+                text = creatorText,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
+
+        if (media.averageRating > 0f) {
+            Spacer(
+                modifier = Modifier.height(10.dp)
+            )
+
+            Text(
+                text = buildString {
+                    append("★ ")
+                    append(
+                        String.format(
+                            "%.1f",
+                            media.averageRating
+                        )
+                    )
+
+                    if (media.ratingCount > 0) {
+                        append("  (")
+                        append(media.ratingCount)
+                        append(")")
+                    }
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+
+        Spacer(
+            modifier = Modifier.height(22.dp)
+        )
+
+        ActionButtons(
+            libraryStatus = state.libraryStatus,
+            isFavorite = state.isFavorite,
+            onAddToLibrary = onAddToLibrary,
+            onToggleFavorite = onToggleFavorite
+        )
+
+        Spacer(
+            modifier = Modifier.height(28.dp)
+        )
+
+        DetailSectionTitle(
+            text = stringResource(R.string.media_about)
+        )
+
+        Spacer(
+            modifier = Modifier.height(12.dp)
+        )
+
+        MediaInformationRow(media = media)
+
+        if (media.genres.isNotEmpty()) {
+            Spacer(
+                modifier = Modifier.height(16.dp)
+            )
+
+            Text(
+                text = media.genres.joinToString(
+                    separator = " • "
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        Spacer(
+            modifier = Modifier.height(28.dp)
+        )
+
+        HorizontalDivider()
+
+        Spacer(
+            modifier = Modifier.height(20.dp)
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement =
+                Arrangement.SpaceBetween,
+            verticalAlignment =
+                Alignment.CenterVertically
+        ) {
+            DetailSectionTitle(
+                text = stringResource(
+                    R.string.media_reviews
+                )
+            )
+
+            TextButton(
+                onClick = onWriteReview
+            ) {
+                Text(
+                    text = stringResource(
+                        R.string.media_write_review
+                    )
+                )
+            }
+        }
+
+        Spacer(
+            modifier = Modifier.height(12.dp)
+        )
+
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            color =
+                MaterialTheme.colorScheme.surfaceContainerLow
+        ) {
+            Text(
+                text = "No reviews have been posted yet.",
+                modifier = Modifier.padding(20.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color =
+                    MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun MediaArtworkPlaceholder() {
+    Surface(
+        modifier = Modifier.size(
+            width = 130.dp,
+            height = 170.dp
+        ),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.primaryContainer
     ) {
         Box(
-            modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = Icons.AutoMirrored.Outlined.MenuBook,
+                imageVector =
+                    Icons.AutoMirrored.Outlined.MenuBook,
                 contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary
+                tint =
+                    MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(56.dp)
             )
         }
     }
 }
 
 @Composable
-private fun RatingRow(media: Media) {
+private fun ActionButtons(
+    libraryStatus: LibraryStatus?,
+    isFavorite: Boolean,
+    onAddToLibrary: () -> Unit,
+    onToggleFavorite: () -> Unit
+) {
     Row(
-        verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement =
+            Arrangement.spacedBy(12.dp)
     ) {
-        repeat(5) {
-            Icon(
-                imageVector = Icons.Default.Star,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.size(18.dp)
+        Button(
+            onClick = onAddToLibrary,
+            enabled = libraryStatus == null,
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = when (libraryStatus) {
+                    LibraryStatus.WANT_TO ->
+                        stringResource(
+                            R.string.status_want_to
+                        )
+
+                    LibraryStatus.IN_PROGRESS ->
+                        stringResource(
+                            R.string.status_in_progress
+                        )
+
+                    LibraryStatus.FINISHED ->
+                        stringResource(
+                            R.string.status_finished
+                        )
+
+                    null ->
+                        stringResource(
+                            R.string.media_add_want_to
+                        )
+                }
             )
         }
 
-        Spacer(modifier = Modifier.width(6.dp))
+        OutlinedButton(
+            onClick = onToggleFavorite,
+            modifier = Modifier.weight(1f),
+            colors =
+                ButtonDefaults.outlinedButtonColors(
+                    contentColor =
+                        MaterialTheme.colorScheme.primary
+                )
+        ) {
+            Icon(
+                imageVector = if (isFavorite) {
+                    Icons.Filled.Favorite
+                } else {
+                    Icons.Outlined.FavoriteBorder
+                },
+                contentDescription = null
+            )
 
-        Text(
-            text = media.averageRating.toString(),
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.secondary
-        )
+            Spacer(
+                modifier = Modifier.size(8.dp)
+            )
 
-        Spacer(modifier = Modifier.width(4.dp))
-
-        Text(
-            text = "(${media.ratingCount})",
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+            Text(
+                text = if (isFavorite) {
+                    stringResource(R.string.media_saved)
+                } else {
+                    stringResource(R.string.media_save)
+                }
+            )
+        }
     }
 }
 
 @Composable
-private fun SectionLabel(
-    text: String,
-    modifier: Modifier = Modifier
+private fun DetailSectionTitle(
+    text: String
 ) {
     Text(
-        text = text,
+        text = text.uppercase(),
+        modifier = Modifier.fillMaxWidth(),
         style = MaterialTheme.typography.labelMedium,
         fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier.fillMaxWidth()
+        color = MaterialTheme.colorScheme.onSurfaceVariant
     )
 }
 
 @Composable
-private fun StatGrid(media: Media) {
+private fun MediaInformationRow(
+    media: Media
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement =
+            Arrangement.spacedBy(10.dp)
     ) {
-        StatBox(
+        InformationCard(
             label = "YEAR",
-            value = media.publishedYear?.toString() ?: "Unknown",
+            value =
+                media.publishedYear?.toString() ?: "—",
             modifier = Modifier.weight(1f)
         )
 
-        StatBox(
-            label = media.middleStatLabel(),
-            value = media.middleStatValue(),
+        InformationCard(
+            label = "RATING",
+            value = if (media.averageRating > 0f) {
+                String.format(
+                    "%.1f",
+                    media.averageRating
+                )
+            } else {
+                "—"
+            },
             modifier = Modifier.weight(1f)
         )
 
-        StatBox(
-            label = "GENRE",
-            value = media.genres.firstOrNull() ?: "Unknown",
+        InformationCard(
+            label = "GENRES",
+            value = media.genres.size.toString(),
             modifier = Modifier.weight(1f)
         )
     }
 }
 
 @Composable
-private fun StatBox(
+private fun InformationCard(
     label: String,
     value: String,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+    Column(
+        modifier = modifier
+            .background(
+                color =
+                    MaterialTheme.colorScheme.surfaceContainerLow,
+                shape = RoundedCornerShape(14.dp)
+            )
+            .padding(
+                horizontal = 8.dp,
+                vertical = 14.dp
+            ),
+        horizontalAlignment =
+            Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color =
+                MaterialTheme.colorScheme.onSurfaceVariant
         )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    vertical = 16.dp,
-                    horizontal = 8.dp
-                ),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall
-            )
 
-            Text(
-                text = value,
-                fontWeight = FontWeight.Bold
-            )
+        Spacer(
+            modifier = Modifier.height(4.dp)
+        )
+
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+private fun Media.creatorText(): String {
+    return when (mediaType.lowercase()) {
+        "book" -> author.orEmpty()
+        "movie" -> director.orEmpty()
+        "show" -> creator.orEmpty()
+
+        else -> {
+            author
+                ?: director
+                ?: creator
+                ?: ""
         }
     }
-}
-
-@Composable
-private fun FakeReviewCard(
-    avatar: String,
-    username: String,
-    time: String,
-    rating: String,
-    review: String
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.Top
-        ) {
-            AssistChip(
-                onClick = {},
-                label = {
-                    Text(avatar)
-                }
-            )
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = username,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Text(
-                        text = time,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-
-                Text(
-                    text = rating,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-
-                Text(
-                    text = review,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
-
-private fun LibraryStatus.buttonText(): String {
-    return when (this) {
-        LibraryStatus.WANT_TO -> "Want To"
-        LibraryStatus.IN_PROGRESS -> "In Progress"
-        LibraryStatus.FINISHED -> "Finished"
-    }
-}
-
-private fun Media.creatorCredit(): String {
-    return when (mediaType) {
-        "book" -> author ?: "Unknown Author"
-        "movie" -> director ?: "Unknown Director"
-        "show" -> creator ?: "Unknown Creator"
-        else -> author ?: director ?: creator ?: "Unknown"
-    }
-}
-
-private fun Media.middleStatLabel(): String {
-    return when (mediaType) {
-        "book" -> "PAGES"
-        "movie" -> "RUNTIME"
-        "show" -> "SEASONS"
-        else -> "INFO"
-    }
-}
-
-private fun Media.middleStatValue(): String {
-    return when (mediaType) {
-        "book" -> pageCount?.toString() ?: "Unknown"
-
-        "movie" -> runtimeMinutes?.let {
-            "$it min"
-        } ?: "Unknown"
-
-        "show" -> when {
-            seasonCount != null && episodeCount != null ->
-                "$seasonCount seasons / $episodeCount episodes"
-
-            seasonCount != null ->
-                "$seasonCount seasons"
-
-            episodeCount != null ->
-                "$episodeCount episodes"
-
-            else ->
-                "Unknown"
-        }
-
-        else -> "Unknown"
-    }
-}
-
-private fun Media.descriptionText(): String {
-    return description
-        ?.takeIf { it.isNotBlank() }
-        ?: "Description coming soon."
 }
