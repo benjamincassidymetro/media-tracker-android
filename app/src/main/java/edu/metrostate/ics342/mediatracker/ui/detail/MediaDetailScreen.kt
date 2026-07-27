@@ -1,72 +1,115 @@
 package edu.metrostate.ics342.mediatracker.ui.detail
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.MenuBook
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import edu.metrostate.ics342.mediatracker.data.model.LibraryStatus
 import edu.metrostate.ics342.mediatracker.data.model.Media
 
-// ── STUB — Students build this in Week 7 ─────────────────────────────────────
-//
-// Week 7 task: Build the Media Detail screen.
-//   1. Receive mediaId from the navigation argument (typed Int — see NavGraph).
-//   2. Call GET /media/{mediaId} to load full details.
-//   3. Display: cover image, title, creator credit, metadata grid, genre chips,
-//      average rating, description, and a library status control.
-//   4. Display the reviews list from GET /reviews?mediaId={id}.
-//   5. Handle loading and error states (full-screen — no half-built screens).
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MediaDetailScreen(
     mediaId: Int,
     onNavigateBack: () -> Unit,
-    onWriteReview: (Int) -> Unit
+    onWriteReview: (Int) -> Unit,
+    viewModel: MediaDetailViewModel = viewModel()
 ) {
-    val viewModel: MediaDetailViewModel = viewModel()
+    val media by viewModel.media.collectAsStateWithLifecycle()
+    val libraryStatus by viewModel.libraryStatus.collectAsStateWithLifecycle()
+    val isFavorite by viewModel.isFavorite.collectAsStateWithLifecycle()
+    val isAddingToLibrary by viewModel.isAddingToLibrary.collectAsStateWithLifecycle()
+    val isSavingFavorite by viewModel.isSavingFavorite.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val errorMessage by viewModel.errorMessage.collectAsStateWithLifecycle()
 
     LaunchedEffect(mediaId) {
         viewModel.loadMedia(mediaId)
     }
 
-    val media by viewModel.media.collectAsState()
-
-    if (media == null) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Media not found.")
-        }
+    /*
+     * Loading is full screen only during the initial media request.
+     * The existing content remains visible during button operations.
+     */
+    if (isLoading && media == null) {
+        FullScreenLoading()
         return
     }
 
-    val currentMedia = media!!
+    /*
+     * A loading failure replaces the screen only when no media was loaded.
+     * Button failures are shown inside the successful detail layout.
+     */
+    if (media == null) {
+        FullScreenError(
+            message = errorMessage ?: "Media not found.",
+            onRetry = viewModel::retry,
+            onNavigateBack = onNavigateBack
+        )
+        return
+    }
+
+    val currentMedia = media ?: return
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { },
+                title = {},
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
                     }
                 },
                 actions = {
-                    IconButton(onClick = { }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                    IconButton(onClick = {}) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "More options"
+                        )
                     }
                 }
             )
@@ -82,7 +125,7 @@ fun MediaDetailScreen(
         ) {
             CoverPlaceholder()
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Text(
                 text = currentMedia.title,
@@ -96,36 +139,44 @@ fun MediaDetailScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             RatingRow(currentMedia)
 
-            Spacer(Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Button(
-                    onClick = { },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("+ Want To")
-                }
+            MediaActionButtons(
+                libraryStatus = libraryStatus,
+                isFavorite = isFavorite,
+                isAddingToLibrary = isAddingToLibrary,
+                isSavingFavorite = isSavingFavorite,
+                onAddToLibrary = viewModel::addToWantTo,
+                onSaveFavorite = viewModel::saveFavorite
+            )
 
-                OutlinedButton(
-                    onClick = { },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.FavoriteBorder, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Save")
+            /*
+             * An add/save error should not remove otherwise valid media content.
+             */
+            if (errorMessage != null) {
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = errorMessage.orEmpty(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                TextButton(onClick = viewModel::clearError) {
+                    Text("Dismiss")
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             SectionLabel("ABOUT")
+
+            Spacer(modifier = Modifier.height(6.dp))
 
             Text(
                 text = currentMedia.descriptionText(),
@@ -134,20 +185,27 @@ fun MediaDetailScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             StatGrid(currentMedia)
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                SectionLabel("REVIEWS (${currentMedia.ratingCount})")
+                SectionLabel(
+                    text = "REVIEWS (${currentMedia.reviewCount})",
+                    modifier = Modifier.weight(1f)
+                )
 
-                TextButton(onClick = { onWriteReview(currentMedia.id) }) {
+                TextButton(
+                    onClick = {
+                        onWriteReview(currentMedia.id)
+                    }
+                ) {
                     Text("+ Write Review")
                 }
             }
@@ -160,7 +218,7 @@ fun MediaDetailScreen(
                 review = "A timeless classic. Fresh every time."
             )
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             FakeReviewCard(
                 avatar = "B",
@@ -174,20 +232,158 @@ fun MediaDetailScreen(
 }
 
 @Composable
+private fun MediaActionButtons(
+    libraryStatus: LibraryStatus?,
+    isFavorite: Boolean,
+    isAddingToLibrary: Boolean,
+    isSavingFavorite: Boolean,
+    onAddToLibrary: () -> Unit,
+    onSaveFavorite: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Button(
+            onClick = onAddToLibrary,
+            enabled = libraryStatus == null && !isAddingToLibrary,
+            modifier = Modifier.weight(1f)
+        ) {
+            when {
+                isAddingToLibrary -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text("Adding")
+                }
+
+                libraryStatus != null -> {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    Text(libraryStatus.buttonText())
+                }
+
+                else -> {
+                    Text("+ Want To")
+                }
+            }
+        }
+
+        OutlinedButton(
+            onClick = onSaveFavorite,
+            enabled = !isFavorite && !isSavingFavorite,
+            modifier = Modifier.weight(1f)
+        ) {
+            when {
+                isSavingFavorite -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text("Saving")
+                }
+
+                isFavorite -> {
+                    Icon(
+                        imageVector = Icons.Default.Favorite,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text("Saved")
+                }
+
+                else -> {
+                    Icon(
+                        imageVector = Icons.Outlined.FavoriteBorder,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text("Save")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FullScreenLoading() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun FullScreenError(
+    message: String,
+    onRetry: () -> Unit,
+    onNavigateBack: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.error
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = onRetry) {
+            Text("Retry")
+        }
+
+        TextButton(onClick = onNavigateBack) {
+            Text("Go Back")
+        }
+    }
+}
+
+@Composable
 private fun CoverPlaceholder() {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
         ),
-        modifier = Modifier.size(width = 120.dp, height = 150.dp)
+        modifier = Modifier.size(
+            width = 120.dp,
+            height = 150.dp
+        )
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                Icons.Outlined.MenuBook,
+                imageVector = Icons.AutoMirrored.Outlined.MenuBook,
                 contentDescription = null,
                 modifier = Modifier.size(48.dp),
                 tint = MaterialTheme.colorScheme.primary
@@ -198,25 +394,27 @@ private fun CoverPlaceholder() {
 
 @Composable
 private fun RatingRow(media: Media) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         repeat(5) {
             Icon(
-                Icons.Default.Star,
+                imageVector = Icons.Default.Star,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.size(18.dp)
             )
         }
 
-        Spacer(Modifier.width(6.dp))
+        Spacer(modifier = Modifier.width(6.dp))
 
         Text(
-            text = "${media.averageRating}",
+            text = media.averageRating.toString(),
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.secondary
         )
 
-        Spacer(Modifier.width(4.dp))
+        Spacer(modifier = Modifier.width(4.dp))
 
         Text(
             text = "(${media.ratingCount})",
@@ -226,13 +424,16 @@ private fun RatingRow(media: Media) {
 }
 
 @Composable
-private fun SectionLabel(text: String) {
+private fun SectionLabel(
+    text: String,
+    modifier: Modifier = Modifier
+) {
     Text(
         text = text,
         style = MaterialTheme.typography.labelMedium,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     )
 }
 
@@ -242,14 +443,32 @@ private fun StatGrid(media: Media) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        StatBox("YEAR", media.publishedYear?.toString() ?: "Unknown", Modifier.weight(1f))
-        StatBox(media.middleStatLabel(), media.middleStatValue(), Modifier.weight(1f))
-        StatBox("GENRE", media.genres.firstOrNull() ?: "Unknown", Modifier.weight(1f))
+        StatBox(
+            label = "YEAR",
+            value = media.publishedYear?.toString() ?: "Unknown",
+            modifier = Modifier.weight(1f)
+        )
+
+        StatBox(
+            label = media.middleStatLabel(),
+            value = media.middleStatValue(),
+            modifier = Modifier.weight(1f)
+        )
+
+        StatBox(
+            label = "GENRE",
+            value = media.genres.firstOrNull() ?: "Unknown",
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 
 @Composable
-private fun StatBox(label: String, value: String, modifier: Modifier = Modifier) {
+private fun StatBox(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
@@ -260,11 +479,21 @@ private fun StatBox(label: String, value: String, modifier: Modifier = Modifier)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp),
+                .padding(
+                    vertical = 16.dp,
+                    horizontal = 8.dp
+                ),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(label, style = MaterialTheme.typography.labelSmall)
-            Text(value, fontWeight = FontWeight.Bold)
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall
+            )
+
+            Text(
+                text = value,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
@@ -286,19 +515,30 @@ private fun FakeReviewCard(
             verticalAlignment = Alignment.Top
         ) {
             AssistChip(
-                onClick = { },
-                label = { Text(avatar) }
+                onClick = {},
+                label = {
+                    Text(avatar)
+                }
             )
 
-            Spacer(Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(username, fontWeight = FontWeight.Bold)
-                    Text(time, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = username,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Text(
+                        text = time,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
 
                 Text(
@@ -312,6 +552,14 @@ private fun FakeReviewCard(
                 )
             }
         }
+    }
+}
+
+private fun LibraryStatus.buttonText(): String {
+    return when (this) {
+        LibraryStatus.WANT_TO -> "Want To"
+        LibraryStatus.IN_PROGRESS -> "In Progress"
+        LibraryStatus.FINISHED -> "Finished"
     }
 }
 
@@ -335,18 +583,32 @@ private fun Media.middleStatLabel(): String {
 
 private fun Media.middleStatValue(): String {
     return when (mediaType) {
-        "book" -> "310"
-        "movie" -> "169 min"
-        "show" -> "2 seasons"
-        else -> "-"
+        "book" -> pageCount?.toString() ?: "Unknown"
+
+        "movie" -> runtimeMinutes?.let {
+            "$it min"
+        } ?: "Unknown"
+
+        "show" -> when {
+            seasonCount != null && episodeCount != null ->
+                "$seasonCount seasons / $episodeCount episodes"
+
+            seasonCount != null ->
+                "$seasonCount seasons"
+
+            episodeCount != null ->
+                "$episodeCount episodes"
+
+            else ->
+                "Unknown"
+        }
+
+        else -> "Unknown"
     }
 }
 
 private fun Media.descriptionText(): String {
-    return when (title) {
-        "Dune" -> "A noble family becomes embroiled in a war for control over the most valuable substance in the universe on the desert planet Arrakis."
-        "Interstellar" -> "A team of explorers travels through a wormhole in space in an attempt to ensure humanity's survival."
-        "Severance" -> "Employees at a mysterious company undergo a procedure that separates their work memories from their personal lives."
-        else -> "Description coming soon."
-    }
+    return description
+        ?.takeIf { it.isNotBlank() }
+        ?: "Description coming soon."
 }

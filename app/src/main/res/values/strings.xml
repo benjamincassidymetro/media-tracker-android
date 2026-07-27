@@ -1,13 +1,14 @@
 <resources>
+
+    <!-- App -->
     <string name="app_name">Media Tracker</string>
     <string name="app_tagline">Track what you read, watch, and discover.</string>
 
-    <!-- Auth -->
+    <!-- Authentication -->
     <string name="email_label">Email</string>
     <string name="password_label">Password</string>
     <string name="sign_in_button">Sign In</string>
     <string name="register_prompt">Don\'t have an account? Register</string>
-    <string name="register_not_implemented">Create Account is not implemented yet.</string>
 
     <!-- Navigation -->
     <string name="nav_feed">Feed</string>
@@ -32,6 +33,11 @@
     <string name="action_change_status">Change status</string>
     <string name="action_remove_from_library">Remove from library</string>
 
+    <!-- Library Status -->
+    <string name="status_want_to">Want to</string>
+    <string name="status_in_progress">In Progress</string>
+    <string name="status_finished">Finished</string>
+
     <!-- Profile -->
     <string name="profile_title">Profile</string>
     <string name="profile_settings">Settings</string>
@@ -42,6 +48,20 @@
     <string name="profile_recently_tracked">Recently tracked</string>
     <string name="profile_nothing_tracked">Nothing tracked yet.</string>
     <string name="profile_user_not_found">User not found.</string>
+
+    <!-- Edit Profile -->
+    <string name="edit_profile_title">Edit Profile</string>
+    <string name="display_name_label">Display Name</string>
+    <string name="username_label">Username</string>
+    <string name="bio_label">Bio</string>
+    <string name="save_changes_button">Save Changes</string>
+    <string name="profile_update_success">Profile updated successfully.</string>
+    <string name="profile_update_failed">Unable to update profile. Please try again.</string>
+    <string name="profile_display_name_required">Display name is required.</string>
+    <string name="profile_username_required">Username is required.</string>
+    <string name="profile_bio_hint">Tell people a little about yourself.</string>
+
+    <!-- Profile Actions -->
     <string name="action_back">Back</string>
     <string name="action_follow">Follow</string>
     <string name="action_following">Following</string>
@@ -63,14 +83,17 @@
     <string name="settings_change_password">Change password</string>
     <string name="settings_dark_mode">Dark mode</string>
 
-    <!-- Stubs -->
-    <string name="search_not_implemented">Search is not implemented yet.</string>
-    <string name="detail_not_implemented">Media Detail is not implemented yet.\n(mediaId = %1$d)</string>
-
-    <!-- Library Status -->
-    <string name="status_want_to">Want to</string>
-    <string name="status_in_progress">In Progress</string>
-    <string name="status_finished">Finished</string>
+    <!-- Media Detail -->
+    <string name="media_unknown_author">Unknown Author</string>
+    <string name="media_unknown_director">Unknown Director</string>
+    <string name="media_unknown_creator">Unknown Creator</string>
+    <string name="media_add_want_to">+ Want To</string>
+    <string name="media_added_want_to">Want To</string>
+    <string name="media_save">Save</string>
+    <string name="media_saved">Saved</string>
+    <string name="media_about">About</string>
+    <string name="media_reviews">Reviews</string>
+    <string name="media_write_review">Write Review</string>
 
     <!-- Activity Status Descriptions -->
     <string name="feed_event_added">%1$s added %2$s</string>
@@ -83,10 +106,36 @@
 
     <!-- Errors -->
     <string name="error_empty_credentials">Please enter your email and password.</string>
+    <string name="error_invalid_credentials">Invalid email or password.</string>
+    <string name="error_network">Unable to connect. Check your internet connection.</string>
+    <string name="error_login_failed">Login failed. Please try again.</string>
+    <string name="error_session_expired">Your session has expired. Please sign in again.</string>
+    <string name="error_media_not_found">Media not found.</string>
+    <string name="error_loading_media">Unable to load media.</string>
+    <string name="error_loading_library">Unable to load your library.</string>
 
-    <!-- Media -->
-    <string name="media_unknown_author">Unknown Author</string>
-    <string name="media_unknown_director">Unknown Director</string>
-    <string name="media_unknown_creator">Unknown Creator</string>
+    <!-- General Actions -->
+    <string name="action_retry">Retry</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_save">Save</string>
+
+    <!-- Temporary Stubs -->
+    <string name="search_not_implemented">Search is not implemented yet.</string>
+    <string name="detail_not_implemented">Media Detail is not implemented yet.\n(mediaId = %1$d)</string>
+    <string name="register_not_implemented">Create Account is not implemented yet.</string>
+
+    <!-- Registration -->
+    <string name="register_title">Create Account</string>
+    <string name="register_tagline">Create an account to track and share your media.</string>
+    <string name="confirm_password_label">Confirm Password</string>
+    <string name="sign_up_button">Create Account</string>
+    <string name="login_prompt">Already have an account? Sign in</string>
+
+    <!-- Registration Errors -->
+    <string name="error_invalid_email">Please enter a valid email address.</string>
+    <string name="error_username_spaces">Username cannot contain spaces.</string>
+    <string name="error_password_too_short">Password must contain at least 6 characters.</string>
+    <string name="error_account_conflict">That email or username is already registered.</string>
+    <string name="error_registration_failed">Registration failed. Please try again.</string>
 
 </resources>
