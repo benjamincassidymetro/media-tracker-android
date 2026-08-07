@@ -4,17 +4,22 @@ import edu.metrostate.ics342.mediatracker.data.model.Favorite
 import edu.metrostate.ics342.mediatracker.data.model.LibraryItem
 import edu.metrostate.ics342.mediatracker.data.model.LibraryStatus
 import edu.metrostate.ics342.mediatracker.data.model.Media
+import edu.metrostate.ics342.mediatracker.data.model.Priority
 import edu.metrostate.ics342.mediatracker.data.network.AddFavoriteRequest
 import edu.metrostate.ics342.mediatracker.data.network.AddToLibraryRequest
+import edu.metrostate.ics342.mediatracker.data.network.PriorityRequest
 import edu.metrostate.ics342.mediatracker.data.network.RetrofitInstance
 import edu.metrostate.ics342.mediatracker.data.network.UpdateLibraryStatusRequest
 import edu.metrostate.ics342.mediatracker.data.remote.MediaTrackerApi
 
 class DefaultMediaRepository(
-    private val api: MediaTrackerApi = RetrofitInstance.mediaApi
+    private val api: MediaTrackerApi =
+        RetrofitInstance.mediaApi
 ) : MediaRepository {
 
-    override suspend fun getMediaDetail(mediaId: Int): Media {
+    override suspend fun getMediaDetail(
+        mediaId: Int
+    ): Media {
         val response = api.getMediaDetail(mediaId)
 
         if (!response.isSuccessful) {
@@ -26,8 +31,9 @@ class DefaultMediaRepository(
 
         return response.body()
             ?: throw ApiException(
-                response.code(),
-                "The server returned an empty media response."
+                code = response.code(),
+                message =
+                    "The server returned an empty media response."
             )
     }
 
@@ -42,8 +48,9 @@ class DefaultMediaRepository(
 
         if (!response.isSuccessful) {
             throw ApiException(
-                response.code(),
-                "Unable to check library status."
+                code = response.code(),
+                message =
+                    "Unable to check library status."
             )
         }
 
@@ -61,8 +68,9 @@ class DefaultMediaRepository(
 
         if (!response.isSuccessful) {
             throw ApiException(
-                response.code(),
-                "Unable to check favorite status."
+                code = response.code(),
+                message =
+                    "Unable to check favorite status."
             )
         }
 
@@ -80,15 +88,15 @@ class DefaultMediaRepository(
             )
         )
 
-        // A duplicate means the item is already in the library.
         if (response.code() == 409) {
             return getLibraryItem(mediaId)
         }
 
         if (!response.isSuccessful) {
             throw ApiException(
-                response.code(),
-                "Unable to add item to library."
+                code = response.code(),
+                message =
+                    "Unable to add item to library."
             )
         }
 
@@ -108,26 +116,30 @@ class DefaultMediaRepository(
 
         if (!response.isSuccessful) {
             throw ApiException(
-                response.code(),
-                "Unable to update library status."
+                code = response.code(),
+                message =
+                    "Unable to update library status."
             )
         }
 
         return response.body()
     }
 
-    override suspend fun removeFromLibrary(mediaId: Int) {
-        val response = api.removeFromLibrary(mediaId)
+    override suspend fun removeFromLibrary(
+        mediaId: Int
+    ) {
+        val response =
+            api.removeFromLibrary(mediaId)
 
-        // A missing item is already effectively removed.
         if (response.code() == 404) {
             return
         }
 
         if (!response.isSuccessful) {
             throw ApiException(
-                response.code(),
-                "Unable to remove item from library."
+                code = response.code(),
+                message =
+                    "Unable to remove item from library."
             )
         }
     }
@@ -141,8 +153,9 @@ class DefaultMediaRepository(
 
         if (!response.isSuccessful) {
             throw ApiException(
-                response.code(),
-                "Unable to load your library."
+                code = response.code(),
+                message =
+                    "Unable to load your library."
             )
         }
 
@@ -153,39 +166,119 @@ class DefaultMediaRepository(
         mediaId: Int
     ): Favorite? {
         val response = api.addFavorite(
-            AddFavoriteRequest(mediaId = mediaId)
+            AddFavoriteRequest(
+                mediaId = mediaId
+            )
         )
 
-        // Already favorited is an acceptable result.
         if (response.code() == 409) {
             return getFavorite(mediaId)
         }
 
         if (!response.isSuccessful) {
             throw ApiException(
-                response.code(),
-                "Unable to save favorite."
+                code = response.code(),
+                message = "Unable to save favorite."
             )
         }
 
         return response.body()
     }
 
-    override suspend fun removeFavorite(mediaId: Int) {
-        val response = api.removeFavorite(mediaId)
+    override suspend fun removeFavorite(
+        mediaId: Int
+    ) {
+        val response =
+            api.removeFavorite(mediaId)
 
-        // Already removed is an acceptable result.
         if (response.code() == 404) {
             return
         }
 
         if (!response.isSuccessful) {
             throw ApiException(
-                response.code(),
-                "Unable to remove favorite."
+                code = response.code(),
+                message =
+                    "Unable to remove favorite."
             )
         }
     }
+
+    override suspend fun getPriorities():
+            List<Priority> {
+
+        val response = api.getPriorities()
+
+        if (!response.isSuccessful) {
+            throw ApiException(
+                code = response.code(),
+                message = when (response.code()) {
+                    401 ->
+                        "Your session has expired. Please sign in again."
+
+                    else ->
+                        "Unable to load priorities."
+                }
+            )
+        }
+
+        return response.body()
+            .orEmpty()
+            .sortedBy { priority ->
+                priority.orderIndex
+            }
+    }
+
+    override suspend fun updatePriorities(
+        priorities: List<Priority>
+    ): List<Priority> {
+
+        val normalizedPriorities =
+            priorities.mapIndexed { index, priority ->
+                priority.copy(
+                    orderIndex = index
+                )
+            }
+
+        normalizedPriorities.forEach { priority ->
+
+            val request = PriorityRequest(
+                mediaId = priority.mediaId,
+                priority = priority.priority,
+                orderIndex = priority.orderIndex,
+                estimatedTimeHours = priority.estimatedTimeHours,
+                notes = priority.notes
+            )
+
+            val response =
+                api.updatePriority(request)
+
+            if (!response.isSuccessful) {
+                val serverError =
+                    response.errorBody()?.string()
+
+                throw ApiException(
+                    code = response.code(),
+                    message =
+                        serverError
+                            ?.takeIf { it.isNotBlank() }
+                            ?: when (response.code()) {
+                                400 ->
+                                    "The priority could not be saved."
+
+                                401 ->
+                                    "Your session has expired. Please sign in again."
+
+                                else ->
+                                    "Unable to update priority."
+                            }
+                )
+            }
+        }
+
+        return getPriorities()
+    }
+
 }
 
 class ApiException(
@@ -195,8 +288,13 @@ class ApiException(
 
 fun LibraryStatus.toApiValue(): String {
     return when (this) {
-        LibraryStatus.WANT_TO -> "want_to"
-        LibraryStatus.IN_PROGRESS -> "in_progress"
-        LibraryStatus.FINISHED -> "finished"
+        LibraryStatus.WANT_TO ->
+            "want_to"
+
+        LibraryStatus.IN_PROGRESS ->
+            "in_progress"
+
+        LibraryStatus.FINISHED ->
+            "finished"
     }
 }

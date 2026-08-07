@@ -13,8 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 data class LibraryUiState(
-    val selectedStatus: LibraryStatus =
-        LibraryStatus.WANT_TO,
+    val selectedStatus: LibraryStatus = LibraryStatus.WANT_TO,
     val items: List<LibraryItem> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null
@@ -46,52 +45,57 @@ class LibraryViewModel(
             return
         }
 
-        _uiState.value =
-            _uiState.value.copy(
-                selectedStatus = status,
-                items = emptyList(),
-                errorMessage = null
-            )
+        _uiState.value = _uiState.value.copy(
+            selectedStatus = status,
+            items = emptyList(),
+            isLoading = false,
+            errorMessage = null
+        )
 
         loadLibrary()
     }
 
     fun loadLibrary() {
-        val selectedStatus = _uiState.value.selectedStatus
+        val requestedStatus =
+            _uiState.value.selectedStatus
 
         viewModelScope.launch {
-            _uiState.value =
-                _uiState.value.copy(
-                    isLoading = true,
-                    errorMessage = null
-                )
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                errorMessage = null
+            )
 
             try {
                 val items =
-                    repository.getLibrary(selectedStatus)
+                    repository.getLibrary(requestedStatus)
 
-                // Make sure an old request does not overwrite a newer tab.
-                if (_uiState.value.selectedStatus ==
-                    selectedStatus
+                /*
+                 * Do not let an older network request overwrite
+                 * a newer tab selection.
+                 */
+                if (
+                    _uiState.value.selectedStatus ==
+                    requestedStatus
                 ) {
                     _uiState.value =
                         _uiState.value.copy(
                             items = items,
-                            isLoading = false
+                            isLoading = false,
+                            errorMessage = null
                         )
                 }
             } catch (exception: Exception) {
-                if (_uiState.value.selectedStatus ==
-                    selectedStatus
+                if (
+                    _uiState.value.selectedStatus ==
+                    requestedStatus
                 ) {
                     _uiState.value =
                         _uiState.value.copy(
                             isLoading = false,
-                            errorMessage =
-                                readableError(
-                                    exception,
-                                    "Unable to load your library."
-                                )
+                            errorMessage = readableError(
+                                exception,
+                                "Unable to load your library."
+                            )
                         )
                 }
             }
@@ -101,29 +105,33 @@ class LibraryViewModel(
     /**
      * Optimistically changes an item's status.
      *
-     * Because this screen only displays one status tab,
-     * the item is removed from the current list immediately.
+     * Since the screen displays one status tab at a time,
+     * the item disappears immediately after being moved.
      */
     fun updateStatus(
         mediaId: Int,
         newStatus: LibraryStatus
     ) {
-        val currentState = _uiState.value
-        val previousItems = currentState.items
+        val originalState = _uiState.value
+        val originalStatus =
+            originalState.selectedStatus
+        val previousItems =
+            originalState.items
 
         val targetItem =
-            previousItems.firstOrNull {
-                it.mediaId == mediaId
+            previousItems.firstOrNull { item ->
+                item.mediaId == mediaId
             } ?: return
 
         if (targetItem.status == newStatus) {
             return
         }
 
-        _uiState.value = currentState.copy(
-            items = previousItems.filterNot {
-                it.mediaId == mediaId
-            }
+        _uiState.value = originalState.copy(
+            items = previousItems.filterNot { item ->
+                item.mediaId == mediaId
+            },
+            errorMessage = null
         )
 
         viewModelScope.launch {
@@ -133,17 +141,24 @@ class LibraryViewModel(
                     status = newStatus
                 )
             } catch (exception: Exception) {
-                // Roll back to the original list.
-                _uiState.value =
-                    _uiState.value.copy(
-                        items = previousItems
-                    )
+                /*
+                 * Only restore the old list if the user is
+                 * still viewing the same tab.
+                 */
+                if (
+                    _uiState.value.selectedStatus ==
+                    originalStatus
+                ) {
+                    _uiState.value =
+                        _uiState.value.copy(
+                            items = previousItems
+                        )
+                }
 
-                _actionError.value =
-                    readableError(
-                        exception,
-                        "Unable to update library status."
-                    )
+                _actionError.value = readableError(
+                    exception,
+                    "Unable to update library status."
+                )
             }
         }
     }
@@ -152,34 +167,50 @@ class LibraryViewModel(
      * Optimistically removes an item.
      */
     fun removeItem(mediaId: Int) {
-        val currentState = _uiState.value
-        val previousItems = currentState.items
+        val originalState = _uiState.value
+        val originalStatus =
+            originalState.selectedStatus
+        val previousItems =
+            originalState.items
 
-        if (previousItems.none { it.mediaId == mediaId }) {
+        val itemExists =
+            previousItems.any { item ->
+                item.mediaId == mediaId
+            }
+
+        if (!itemExists) {
             return
         }
 
-        _uiState.value = currentState.copy(
-            items = previousItems.filterNot {
-                it.mediaId == mediaId
-            }
+        _uiState.value = originalState.copy(
+            items = previousItems.filterNot { item ->
+                item.mediaId == mediaId
+            },
+            errorMessage = null
         )
 
         viewModelScope.launch {
             try {
                 repository.removeFromLibrary(mediaId)
             } catch (exception: Exception) {
-                // Restore the removed item after a genuine failure.
-                _uiState.value =
-                    _uiState.value.copy(
-                        items = previousItems
-                    )
+                /*
+                 * Avoid restoring Want To items into another
+                 * tab if the user switched tabs meanwhile.
+                 */
+                if (
+                    _uiState.value.selectedStatus ==
+                    originalStatus
+                ) {
+                    _uiState.value =
+                        _uiState.value.copy(
+                            items = previousItems
+                        )
+                }
 
-                _actionError.value =
-                    readableError(
-                        exception,
-                        "Unable to remove item from library."
-                    )
+                _actionError.value = readableError(
+                    exception,
+                    "Unable to remove item from library."
+                )
             }
         }
     }

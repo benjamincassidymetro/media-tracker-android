@@ -63,14 +63,25 @@ fun MediaTrackerNavGraph(navController: NavHostController) {
             composable(Routes.REGISTER) {
                 RegisterScreen(
                     onRegisterSuccess = {
-                        navController.navigate(Routes.ACTIVITY_FEED) {
-                            popUpTo(Routes.LOGIN) { inclusive = true }
+                        navController.navigate(Routes.LOGIN) {
+                            popUpTo(Routes.REGISTER) {
+                                inclusive = true
+                            }
+
+                            launchSingleTop = true
                         }
                     },
-                    onNavigateToLogin = { navController.popBackStack() }
+                    onNavigateToLogin = {
+                        navController.navigate(Routes.LOGIN) {
+                            popUpTo(Routes.REGISTER) {
+                                inclusive = true
+                            }
+
+                            launchSingleTop = true
+                        }
+                    }
                 )
             }
-
             composable(Routes.ACTIVITY_FEED) {
                 ActivityFeedScreen(
                     onMediaClick = { mediaId -> navController.navigate("media_detail/$mediaId") },

@@ -1,6 +1,5 @@
 package edu.metrostate.ics342.mediatracker.ui.library
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,21 +10,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.MenuBook
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PlayCircle
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,10 +27,8 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,26 +37,36 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import edu.metrostate.ics342.mediatracker.R
 import edu.metrostate.ics342.mediatracker.data.model.LibraryItem
 import edu.metrostate.ics342.mediatracker.data.model.LibraryStatus
-import edu.metrostate.ics342.mediatracker.data.model.Media
-import androidx.compose.ui.res.stringResource
+import edu.metrostate.ics342.mediatracker.ui.priorities.PrioritiesViewModel
+import edu.metrostate.ics342.mediatracker.ui.priorities.PriorityEditorDialog
+import edu.metrostate.ics342.mediatracker.ui.priorities.prioritiesSection
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(
     onMediaClick: (Int) -> Unit,
-    viewModel: LibraryViewModel = viewModel()
+    viewModel: LibraryViewModel = viewModel(),
+    prioritiesViewModel: PrioritiesViewModel = viewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val actionError by viewModel.actionError.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val actionError by viewModel.actionError.collectAsStateWithLifecycle()
+    val prioritiesState by prioritiesViewModel.uiState
+        .collectAsStateWithLifecycle()
+
+    var selectedPriorityItem by remember {
+        mutableStateOf<LibraryItem?>(null)
+    }
 
     val snackbarHostState = remember {
         SnackbarHostState()
+    }
+
+    LaunchedEffect(Unit) {
+        prioritiesViewModel.loadPriorities()
     }
 
     LaunchedEffect(actionError) {
@@ -75,118 +76,222 @@ fun LibraryScreen(
         }
     }
 
+    LaunchedEffect(prioritiesState.errorMessage) {
+        prioritiesState.errorMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            prioritiesViewModel.clearError()
+        }
+    }
+
     Scaffold(
         snackbarHost = {
-            SnackbarHost(
-                hostState = snackbarHostState
-            )
-        },
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(
-                            R.string.library_title
-                        ),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            )
+            SnackbarHost(snackbarHostState)
         }
     ) { innerPadding ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp)
         ) {
-            LibraryStatusSelector(
-                selectedStatus = uiState.selectedStatus,
-                onStatusSelected =
-                    viewModel::selectStatus
+            Text(
+                text = "Library",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 16.dp
+                )
             )
 
             Spacer(
                 modifier = Modifier.height(12.dp)
             )
 
-            when {
-                uiState.isLoading &&
-                        uiState.items.isEmpty() -> {
-                    LibraryLoadingContent()
-                }
+            LibraryStatusSelector(
+                selectedStatus = uiState.selectedStatus,
+                onStatusSelected = viewModel::selectStatus,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
 
-                uiState.errorMessage != null &&
-                        uiState.items.isEmpty() -> {
-                    LibraryErrorContent(
-                        message =
-                            uiState.errorMessage.orEmpty(),
-                        onRetry =
-                            viewModel::loadLibrary
-                    )
-                }
+            Spacer(
+                modifier = Modifier.height(8.dp)
+            )
 
-                uiState.items.isEmpty() -> {
-                    LibraryEmptyContent(
-                        status = uiState.selectedStatus
-                    )
-                }
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                prioritiesSection(
+                    priorities = prioritiesState.priorities,
+                    isLoading = prioritiesState.isLoading,
+                    isSaving = prioritiesState.isSaving,
+                    errorMessage = prioritiesState.errorMessage,
+                    onRetry = prioritiesViewModel::loadPriorities,
+                    onMove = prioritiesViewModel::movePriority,
+                    onEditPriority = { mediaId ->
+                        selectedPriorityItem =
+                            uiState.items.firstOrNull { libraryItem ->
+                                libraryItem.mediaId == mediaId
+                            }
+                    },
+                    onRemovePriority =
+                        prioritiesViewModel::removePriority
+                )
 
-                else -> {
-                    LibraryListContent(
-                        items = uiState.items,
-                        selectedStatus =
-                            uiState.selectedStatus,
-                        onMediaClick = onMediaClick,
-                        onUpdateStatus =
-                            viewModel::updateStatus,
-                        onRemoveItem =
-                            viewModel::removeItem
-                    )
+                when {
+                    uiState.isLoading &&
+                            uiState.items.isEmpty() -> {
+
+                        item(key = "library-loading") {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(240.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                    }
+
+                    uiState.errorMessage != null &&
+                            uiState.items.isEmpty() -> {
+
+                        item(key = "library-error") {
+                            LibraryErrorContent(
+                                message =
+                                    uiState.errorMessage.orEmpty(),
+                                onRetry = viewModel::loadLibrary
+                            )
+                        }
+                    }
+
+                    uiState.items.isEmpty() -> {
+                        item(key = "library-empty") {
+                            LibraryEmptyContent(
+                                status = uiState.selectedStatus
+                            )
+                        }
+                    }
+
+                    else -> {
+                        item(key = "item-count") {
+                            Text(
+                                text =
+                                    "${uiState.items.size} items",
+                                style =
+                                    MaterialTheme.typography.bodySmall,
+                                color =
+                                    MaterialTheme.colorScheme
+                                        .onSurfaceVariant,
+                                modifier = Modifier.padding(
+                                    horizontal = 16.dp,
+                                    vertical = 4.dp
+                                )
+                            )
+                        }
+
+                        items(
+                            items = uiState.items,
+                            key = { libraryItem ->
+                                "library-${libraryItem.mediaId}"
+                            }
+                        ) { libraryItem ->
+
+                            val alreadyPrioritized =
+                                prioritiesState.priorities.any {
+                                        priority ->
+                                    priority.mediaId ==
+                                            libraryItem.mediaId
+                                }
+
+                            LibraryItemCard(
+                                item = libraryItem,
+                                alreadyPrioritized =
+                                    alreadyPrioritized,
+                                prioritiesFull =
+                                    prioritiesState.isFull,
+                                onClick = {
+                                    onMediaClick(
+                                        libraryItem.mediaId
+                                    )
+                                },
+                                onEditPriority = {
+                                    selectedPriorityItem =
+                                        libraryItem
+                                },
+                                onUpdateStatus = { newStatus ->
+                                    viewModel.updateStatus(
+                                        mediaId =
+                                            libraryItem.mediaId,
+                                        newStatus = newStatus
+                                    )
+                                },
+                                onRemove = {
+                                    viewModel.removeItem(
+                                        libraryItem.mediaId
+                                    )
+                                }
+                            )
+                        }
+
+                        item(key = "bottom-space") {
+                            Spacer(
+                                modifier = Modifier.height(24.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
+    }
+
+    selectedPriorityItem?.let { libraryItem ->
+        PriorityEditorDialog(
+            libraryItem = libraryItem,
+            onDismiss = {
+                selectedPriorityItem = null
+            },
+            onSave = { level, hours, notes ->
+                prioritiesViewModel.addPriority(
+                    libraryItem = libraryItem,
+                    priorityLevel = level,
+                    estimatedTimeHours = hours,
+                    notes = notes
+                )
+
+                selectedPriorityItem = null
+            }
+        )
     }
 }
 
 @Composable
 private fun LibraryStatusSelector(
     selectedStatus: LibraryStatus,
-    onStatusSelected: (LibraryStatus) -> Unit
+    onStatusSelected: (LibraryStatus) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                color =
-                    MaterialTheme.colorScheme.surfaceContainer,
-                shape = RoundedCornerShape(14.dp)
-            )
-            .padding(4.dp),
-        horizontalArrangement =
-            Arrangement.spacedBy(4.dp)
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        LibraryStatusTab(
-            text = stringResource(
-                R.string.status_want_to
-            ),
+        StatusButton(
+            text = "Want To",
             selected =
                 selectedStatus == LibraryStatus.WANT_TO,
             onClick = {
-                onStatusSelected(
-                    LibraryStatus.WANT_TO
-                )
+                onStatusSelected(LibraryStatus.WANT_TO)
             },
             modifier = Modifier.weight(1f)
         )
 
-        LibraryStatusTab(
-            text = stringResource(
-                R.string.status_in_progress
-            ),
+        StatusButton(
+            text = "In Progress",
             selected =
-                selectedStatus ==
-                        LibraryStatus.IN_PROGRESS,
+                selectedStatus == LibraryStatus.IN_PROGRESS,
             onClick = {
                 onStatusSelected(
                     LibraryStatus.IN_PROGRESS
@@ -195,17 +300,12 @@ private fun LibraryStatusSelector(
             modifier = Modifier.weight(1f)
         )
 
-        LibraryStatusTab(
-            text = stringResource(
-                R.string.status_finished
-            ),
+        StatusButton(
+            text = "Finished",
             selected =
-                selectedStatus ==
-                        LibraryStatus.FINISHED,
+                selectedStatus == LibraryStatus.FINISHED,
             onClick = {
-                onStatusSelected(
-                    LibraryStatus.FINISHED
-                )
+                onStatusSelected(LibraryStatus.FINISHED)
             },
             modifier = Modifier.weight(1f)
         )
@@ -213,56 +313,189 @@ private fun LibraryStatusSelector(
 }
 
 @Composable
-private fun LibraryStatusTab(
+private fun StatusButton(
     text: String,
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier.clickable(
-            onClick = onClick
-        ),
-        shape = RoundedCornerShape(10.dp),
+        modifier = modifier.clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
         color = if (selected) {
             MaterialTheme.colorScheme.primaryContainer
         } else {
-            MaterialTheme.colorScheme.surfaceContainer
-        },
-        contentColor = if (selected) {
-            MaterialTheme.colorScheme.onPrimaryContainer
-        } else {
-            MaterialTheme.colorScheme.onSurfaceVariant
+            MaterialTheme.colorScheme.surfaceVariant
         }
     ) {
-        Box(
+        Text(
+            text = text,
             modifier = Modifier.padding(
-                horizontal = 6.dp,
+                horizontal = 8.dp,
                 vertical = 10.dp
             ),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = if (selected) {
-                    FontWeight.Bold
-                } else {
-                    FontWeight.Normal
-                },
-                maxLines = 1
-            )
-        }
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.labelMedium
+        )
     }
 }
 
 @Composable
-private fun LibraryLoadingContent() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+private fun LibraryItemCard(
+    item: LibraryItem,
+    alreadyPrioritized: Boolean,
+    prioritiesFull: Boolean,
+    onClick: () -> Unit,
+    onEditPriority: () -> Unit,
+    onUpdateStatus: (LibraryStatus) -> Unit,
+    onRemove: () -> Unit
+) {
+    var menuExpanded by remember {
+        mutableStateOf(false)
+    }
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(14.dp),
+        tonalElevation = 2.dp
     ) {
-        CircularProgressIndicator()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = item.media.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                Text(
+                    text = when (item.status) {
+                        LibraryStatus.WANT_TO ->
+                            "Want To"
+
+                        LibraryStatus.IN_PROGRESS ->
+                            "In Progress"
+
+                        LibraryStatus.FINISHED ->
+                            "Finished"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color =
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Box {
+                IconButton(
+                    onClick = {
+                        menuExpanded = true
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "Item options"
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = {
+                        menuExpanded = false
+                    }
+                ) {
+                    if (item.status == LibraryStatus.WANT_TO) {
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    if (alreadyPrioritized) {
+                                        "Edit priority"
+                                    } else {
+                                        "Add to priorities"
+                                    }
+                                )
+                            },
+                            enabled =
+                                alreadyPrioritized ||
+                                        !prioritiesFull,
+                            onClick = {
+                                menuExpanded = false
+                                onEditPriority()
+                            }
+                        )
+                    }
+
+                    if (
+                        item.status !=
+                        LibraryStatus.WANT_TO
+                    ) {
+                        DropdownMenuItem(
+                            text = {
+                                Text("Move to Want To")
+                            },
+                            onClick = {
+                                menuExpanded = false
+                                onUpdateStatus(
+                                    LibraryStatus.WANT_TO
+                                )
+                            }
+                        )
+                    }
+
+                    if (
+                        item.status !=
+                        LibraryStatus.IN_PROGRESS
+                    ) {
+                        DropdownMenuItem(
+                            text = {
+                                Text("Move to In Progress")
+                            },
+                            onClick = {
+                                menuExpanded = false
+                                onUpdateStatus(
+                                    LibraryStatus.IN_PROGRESS
+                                )
+                            }
+                        )
+                    }
+
+                    if (
+                        item.status !=
+                        LibraryStatus.FINISHED
+                    ) {
+                        DropdownMenuItem(
+                            text = {
+                                Text("Move to Finished")
+                            },
+                            onClick = {
+                                menuExpanded = false
+                                onUpdateStatus(
+                                    LibraryStatus.FINISHED
+                                )
+                            }
+                        )
+                    }
+
+                    DropdownMenuItem(
+                        text = {
+                            Text("Remove from library")
+                        },
+                        onClick = {
+                            menuExpanded = false
+                            onRemove()
+                        }
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -273,16 +506,14 @@ private fun LibraryErrorContent(
 ) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment =
-            Alignment.CenterHorizontally,
-        verticalArrangement =
-            Arrangement.Center
+            .fillMaxWidth()
+            .height(240.dp)
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
         Text(
             text = message,
-            style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.error,
             textAlign = TextAlign.Center
         )
@@ -291,14 +522,8 @@ private fun LibraryErrorContent(
             modifier = Modifier.height(16.dp)
         )
 
-        Button(
-            onClick = onRetry
-        ) {
-            Text(
-                text = stringResource(
-                    R.string.action_retry
-                )
-            )
+        Button(onClick = onRetry) {
+            Text("Retry")
         }
     }
 }
@@ -318,384 +543,17 @@ private fun LibraryEmptyContent(
             "Nothing in Finished yet."
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment =
-            Alignment.CenterHorizontally,
-        verticalArrangement =
-            Arrangement.Center
-    ) {
-        Icon(
-            imageVector =
-                Icons.AutoMirrored.Outlined.MenuBook,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint =
-                MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(
-            modifier = Modifier.height(16.dp)
-        )
-
-        Text(
-            text = message,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(
-            modifier = Modifier.height(6.dp)
-        )
-
-        Text(
-            text = stringResource(
-                R.string.library_empty
-            ),
-            style = MaterialTheme.typography.bodyMedium,
-            color =
-                MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
-@Composable
-private fun LibraryListContent(
-    items: List<LibraryItem>,
-    selectedStatus: LibraryStatus,
-    onMediaClick: (Int) -> Unit,
-    onUpdateStatus:
-        (Int, LibraryStatus) -> Unit,
-    onRemoveItem: (Int) -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        Text(
-            text = if (items.size == 1) {
-                stringResource(
-                    R.string.library_item_count,
-                    items.size
-                )
-            } else {
-                stringResource(
-                    R.string.library_items_count,
-                    items.size
-                )
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color =
-                MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(
-                horizontal = 2.dp,
-                vertical = 4.dp
-            )
-        )
-
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement =
-                Arrangement.spacedBy(10.dp)
-        ) {
-            items(
-                items = items,
-                key = { item ->
-                    item.mediaId
-                }
-            ) { item ->
-                LibraryItemCard(
-                    item = item,
-                    selectedStatus = selectedStatus,
-                    onClick = {
-                        onMediaClick(item.mediaId)
-                    },
-                    onUpdateStatus = {
-                            newStatus ->
-                        onUpdateStatus(
-                            item.mediaId,
-                            newStatus
-                        )
-                    },
-                    onRemove = {
-                        onRemoveItem(item.mediaId)
-                    }
-                )
-            }
-
-            item {
-                Spacer(
-                    modifier = Modifier.height(20.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun LibraryItemCard(
-    item: LibraryItem,
-    selectedStatus: LibraryStatus,
-    onClick: () -> Unit,
-    onUpdateStatus: (LibraryStatus) -> Unit,
-    onRemove: () -> Unit
-) {
-    val media = item.media
-
-    var menuExpanded by remember {
-        mutableStateOf(false)
-    }
-
-    Surface(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        color =
-            MaterialTheme.colorScheme.surfaceContainerLow,
-        tonalElevation = 1.dp
+            .height(240.dp)
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment =
-                Alignment.CenterVertically
-        ) {
-            LibraryArtworkPlaceholder(
-                mediaType =
-                    media?.mediaType.orEmpty()
-            )
-
-            Spacer(
-                modifier = Modifier.size(12.dp)
-            )
-
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text =
-                        media?.title
-                            ?: "Unknown media",
-                    style =
-                        MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                val creator =
-                    media?.creatorText().orEmpty()
-
-                if (creator.isNotBlank()) {
-                    Spacer(
-                        modifier = Modifier.height(3.dp)
-                    )
-
-                    Text(
-                        text = creator,
-                        style =
-                            MaterialTheme.typography.bodySmall,
-                        color =
-                            MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                Spacer(
-                    modifier = Modifier.height(8.dp)
-                )
-
-                LibraryStatusBadge(
-                    status = item.status
-                )
-            }
-
-            Box {
-                IconButton(
-                    onClick = {
-                        menuExpanded = true
-                    }
-                ) {
-                    Icon(
-                        imageVector =
-                            Icons.Filled.MoreVert,
-                        contentDescription =
-                            stringResource(
-                                R.string.action_more_options
-                            )
-                    )
-                }
-
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = {
-                        menuExpanded = false
-                    }
-                ) {
-                    LibraryStatus.entries
-                        .filter {
-                            it != selectedStatus
-                        }
-                        .forEach { status ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        text = status.label()
-                                    )
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector =
-                                            status.icon(),
-                                        contentDescription = null
-                                    )
-                                },
-                                onClick = {
-                                    menuExpanded = false
-                                    onUpdateStatus(status)
-                                }
-                            )
-                        }
-
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = stringResource(
-                                    R.string
-                                        .action_remove_from_library
-                                ),
-                                color =
-                                    MaterialTheme.colorScheme.error
-                            )
-                        },
-                        onClick = {
-                            menuExpanded = false
-                            onRemove()
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun LibraryArtworkPlaceholder(
-    mediaType: String
-) {
-    val containerColor = when (
-        mediaType.lowercase()
-    ) {
-        "movie" ->
-            MaterialTheme.colorScheme.secondaryContainer
-
-        "show" ->
-            MaterialTheme.colorScheme.tertiaryContainer
-
-        else ->
-            MaterialTheme.colorScheme.primaryContainer
-    }
-
-    Surface(
-        modifier = Modifier.size(
-            width = 60.dp,
-            height = 76.dp
-        ),
-        shape = RoundedCornerShape(10.dp),
-        color = containerColor
-    ) {
-        Box(
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector =
-                    Icons.AutoMirrored.Outlined.MenuBook,
-                contentDescription = null,
-                modifier = Modifier.size(28.dp)
-            )
-        }
-    }
-}
-
-@Composable
-private fun LibraryStatusBadge(
-    status: LibraryStatus
-) {
-    Surface(
-        shape = RoundedCornerShape(50),
-        color =
-            MaterialTheme.colorScheme.primaryContainer
-    ) {
-        Row(
-            modifier = Modifier.padding(
-                horizontal = 9.dp,
-                vertical = 4.dp
-            ),
-            verticalAlignment =
-                Alignment.CenterVertically,
-            horizontalArrangement =
-                Arrangement.spacedBy(4.dp)
-        ) {
-            Icon(
-                imageVector = status.icon(),
-                contentDescription = null,
-                modifier = Modifier.size(14.dp)
-            )
-
-            Text(
-                text = status.label(),
-                style =
-                    MaterialTheme.typography.labelSmall,
-                color =
-                    MaterialTheme.colorScheme.onPrimaryContainer
-            )
-        }
-    }
-}
-
-@Composable
-private fun LibraryStatus.label(): String {
-    return when (this) {
-        LibraryStatus.WANT_TO ->
-            stringResource(R.string.status_want_to)
-
-        LibraryStatus.IN_PROGRESS ->
-            stringResource(
-                R.string.status_in_progress
-            )
-
-        LibraryStatus.FINISHED ->
-            stringResource(R.string.status_finished)
-    }
-}
-
-private fun LibraryStatus.icon() =
-    when (this) {
-        LibraryStatus.WANT_TO ->
-            Icons.Filled.Schedule
-
-        LibraryStatus.IN_PROGRESS ->
-            Icons.Filled.PlayCircle
-
-        LibraryStatus.FINISHED ->
-            Icons.Filled.CheckCircle
-    }
-
-private fun Media.creatorText(): String {
-    return when (mediaType.lowercase()) {
-        "book" -> author.orEmpty()
-        "movie" -> director.orEmpty()
-        "show" -> creator.orEmpty()
-
-        else -> {
-            author
-                ?: director
-                ?: creator
-                ?: ""
-        }
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center
+        )
     }
 }

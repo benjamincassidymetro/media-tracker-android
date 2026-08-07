@@ -1,5 +1,24 @@
 import com.android.build.api.dsl.ApplicationExtension
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
+
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { input ->
+            load(input)
+        }
+    }
+}
+
+fun requiredLocalProperty(name: String): String {
+    return localProperties.getProperty(name)
+        ?: error(
+            "Missing '$name' in local.properties. " +
+                    "Add it to the local.properties file at the project root."
+        )
+}
 
 plugins {
     alias(libs.plugins.android.application)
@@ -17,25 +36,40 @@ extensions.configure<ApplicationExtension> {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner =
+            "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "API_CLIENT_ID", "\"\"")
-        buildConfigField("String", "API_CLIENT_SECRET", "\"\"")
+        buildConfigField(
+            "String",
+            "API_CLIENT_ID",
+            "\"${requiredLocalProperty("apiClientId")}\""
+        )
+
+        buildConfigField(
+            "String",
+            "API_CLIENT_SECRET",
+            "\"${requiredLocalProperty("apiClientSecret")}\""
+        )
     }
 
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
+
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
+                getDefaultProguardFile(
+                    "proguard-android-optimize.txt"
+                ),
                 "proguard-rules.pro"
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_22
         targetCompatibility = JavaVersion.VERSION_22
     }
+
     buildFeatures {
         compose = true
         buildConfig = true
@@ -44,11 +78,11 @@ extensions.configure<ApplicationExtension> {
 
 kotlin {
     jvmToolchain(22)
+
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_22)
     }
 }
-
 
 dependencies {
     implementation(libs.androidx.core.ktx)
@@ -75,7 +109,9 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(
+        platform(libs.androidx.compose.bom)
+    )
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)

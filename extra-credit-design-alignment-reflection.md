@@ -23,7 +23,7 @@
 
 5. The media cards on the Search screen were missing the required 12dp rounded corners and 2dp elevation.
 
-6. TThe Bottom Navigation active tab did not display the primary container indicator pill and was not using the proper primary color for the selected icon and label.
+6. The Bottom Navigation active tab did not display the primary container indicator pill and was not using the proper primary color for the selected icon and label.
 
 
 ---

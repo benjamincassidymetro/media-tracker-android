@@ -4,8 +4,15 @@ import edu.metrostate.ics342.mediatracker.data.model.Favorite
 import edu.metrostate.ics342.mediatracker.data.model.LibraryItem
 import edu.metrostate.ics342.mediatracker.data.model.LibraryStatus
 import edu.metrostate.ics342.mediatracker.data.model.Media
+import edu.metrostate.ics342.mediatracker.data.model.Priority
 
 interface MediaRepository {
+
+    suspend fun getPriorities(): List<Priority>
+
+    suspend fun updatePriorities(
+        priorities: List<Priority>
+    ): List<Priority>
 
     suspend fun getMediaDetail(mediaId: Int): Media
 

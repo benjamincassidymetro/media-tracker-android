@@ -7,6 +7,8 @@ import edu.metrostate.ics342.mediatracker.data.model.Review
 import edu.metrostate.ics342.mediatracker.data.network.AddFavoriteRequest
 import edu.metrostate.ics342.mediatracker.data.network.AddToLibraryRequest
 import edu.metrostate.ics342.mediatracker.data.network.UpdateLibraryStatusRequest
+import edu.metrostate.ics342.mediatracker.data.model.Priority
+import edu.metrostate.ics342.mediatracker.data.network.PriorityRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -25,6 +27,13 @@ interface MediaTrackerApi {
         @Query("after") after: String? = null
     ): Response<List<Media>>
 
+    @GET("priorities")
+    suspend fun getPriorities(): Response<List<Priority>>
+
+    @PUT("priorities")
+    suspend fun updatePriority(
+        @Body priority: PriorityRequest
+    ): Response<Priority>
     @GET("media/{mediaId}")
     suspend fun getMediaDetail(
         @Path("mediaId") mediaId: Int
