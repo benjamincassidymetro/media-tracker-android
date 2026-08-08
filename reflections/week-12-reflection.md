@@ -10,7 +10,7 @@
 
 ## Commits This Week
 
-**Link:*https://github.com/fascineh1/media-tracker-android/pull/new/week-12*
+**Link:*https://github.com/fascineh1/media-tracker-android/pull/12*
 
 ---
 
