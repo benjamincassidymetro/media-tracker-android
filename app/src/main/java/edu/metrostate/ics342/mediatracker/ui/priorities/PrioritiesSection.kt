@@ -167,25 +167,80 @@ private fun PrioritiesHeader(
 
 @Composable
 private fun PriorityCard(
-    priority: Priority,
+    priority: edu.metrostate.ics342.mediatracker.data.model.Priority,
     index: Int,
     itemCount: Int,
     onMove: (Int, Int) -> Unit,
     onEdit: () -> Unit,
     onRemove: () -> Unit
 ) {
-    var accumulatedDrag by remember(index) {
+    var accumulatedDrag by remember(priority.mediaId) {
         mutableFloatStateOf(0f)
     }
 
     Card(
-        onClick = onEdit,
         modifier = Modifier
             .fillMaxWidth()
             .padding(
                 horizontal = 16.dp,
                 vertical = 6.dp
             )
+            .pointerInput(
+                priority.mediaId,
+                index,
+                itemCount
+            ) {
+                detectDragGesturesAfterLongPress(
+                    onDragStart = {
+                        accumulatedDrag = 0f
+                    },
+
+                    onDragEnd = {
+                        accumulatedDrag = 0f
+                    },
+
+                    onDragCancel = {
+                        accumulatedDrag = 0f
+                    },
+
+                    onDrag = { change, dragAmount ->
+
+                        // Prevent LazyColumn from treating
+                        // this gesture as scrolling.
+                        change.consume()
+
+                        accumulatedDrag += dragAmount.y
+
+                        // Smaller threshold makes dragging
+                        // much easier on the emulator.
+                        val threshold = 35f
+
+                        when {
+                            accumulatedDrag > threshold &&
+                                    index < itemCount - 1 -> {
+
+                                onMove(
+                                    index,
+                                    index + 1
+                                )
+
+                                accumulatedDrag = 0f
+                            }
+
+                            accumulatedDrag < -threshold &&
+                                    index > 0 -> {
+
+                                onMove(
+                                    index,
+                                    index - 1
+                                )
+
+                                accumulatedDrag = 0f
+                            }
+                        }
+                    }
+                )
+            }
     ) {
         Row(
             modifier = Modifier
@@ -194,50 +249,12 @@ private fun PriorityCard(
             verticalAlignment =
                 Alignment.CenterVertically
         ) {
+
             Icon(
-                imageVector = Icons.Default.DragHandle,
-                contentDescription = "Drag to reorder",
-                modifier = Modifier.pointerInput(
-                    priority.mediaId,
-                    index,
-                    itemCount
-                ) {
-                    detectDragGesturesAfterLongPress(
-                        onDragStart = {
-                            accumulatedDrag = 0f
-                        },
-                        onDragEnd = {
-                            accumulatedDrag = 0f
-                        },
-                        onDragCancel = {
-                            accumulatedDrag = 0f
-                        },
-                        onDrag = { change, dragAmount ->
-                            change.consume()
-
-                            accumulatedDrag +=
-                                dragAmount.y
-
-                            val threshold = 80f
-
-                            when {
-                                accumulatedDrag > threshold &&
-                                        index < itemCount - 1 -> {
-
-                                    onMove(index, index + 1)
-                                    accumulatedDrag = 0f
-                                }
-
-                                accumulatedDrag < -threshold &&
-                                        index > 0 -> {
-
-                                    onMove(index, index - 1)
-                                    accumulatedDrag = 0f
-                                }
-                            }
-                        }
-                    )
-                }
+                imageVector =
+                    Icons.Default.DragHandle,
+                contentDescription =
+                    "Long press and drag to reorder"
             )
 
             Column(
@@ -245,6 +262,7 @@ private fun PriorityCard(
                     .weight(1f)
                     .padding(horizontal = 12.dp)
             ) {
+
                 Text(
                     text = priority.media.title,
                     style =
@@ -285,7 +303,8 @@ private fun PriorityCard(
                 onClick = onRemove
             ) {
                 Icon(
-                    imageVector = Icons.Default.Delete,
+                    imageVector =
+                        Icons.Default.Delete,
                     contentDescription =
                         "Remove from priorities"
                 )

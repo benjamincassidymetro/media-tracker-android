@@ -39,6 +39,116 @@ class PrioritiesViewModelTest {
     }
 
     @Test
+    fun `cannot add a sixth priority`() = runTest {
+        val existing = List(5) { index ->
+            priority(
+                mediaId = index + 1,
+                orderIndex = index
+            )
+        }
+
+        coEvery {
+            repository.getPriorities()
+        } returns existing
+
+        val viewModel =
+            PrioritiesViewModel(repository)
+
+        viewModel.loadPriorities()
+        advanceUntilIdle()
+
+        val sixthLibraryItem =
+            edu.metrostate.ics342.mediatracker.data.model.LibraryItem(
+                userId = "test-user",
+                mediaId = 6,
+                status =
+                    edu.metrostate.ics342.mediatracker.data.model.LibraryStatus.WANT_TO,
+                addedAt = "",
+                updatedAt = "",
+                media = Media(
+                    id = 6,
+                    mediaType = "movie",
+                    title = "Media 6"
+                )
+            )
+
+        viewModel.addPriority(
+            libraryItem = sixthLibraryItem,
+            priorityLevel = 1,
+            estimatedTimeHours = 3.0,
+            notes = "Should not be added"
+        )
+
+        advanceUntilIdle()
+
+        assertEquals(
+            5,
+            viewModel.uiState.value.priorities.size
+        )
+
+        assertEquals(
+            "You can prioritize up to 5 items.",
+            viewModel.uiState.value.errorMessage
+        )
+
+        coVerify(exactly = 0) {
+            repository.updatePriorities(any())
+        }
+    }
+    @Test
+    fun `failed reorder restores previous order`() =
+        runTest {
+
+            val priorities = listOf(
+                priority(1, 0),
+                priority(2, 1),
+                priority(3, 2)
+            )
+
+            coEvery {
+                repository.getPriorities()
+            } returns priorities
+
+            coEvery {
+                repository.updatePriorities(any())
+            } throws RuntimeException(
+                "Network failure"
+            )
+
+            val viewModel =
+                PrioritiesViewModel(repository)
+
+            viewModel.loadPriorities()
+            advanceUntilIdle()
+
+            viewModel.movePriority(
+                fromIndex = 0,
+                toIndex = 2
+            )
+
+            // Optimistic state changes immediately.
+            assertEquals(
+                listOf(2, 3, 1),
+                viewModel.uiState.value.priorities
+                    .map { it.mediaId }
+            )
+
+            advanceUntilIdle()
+
+            // Failed request should restore original order.
+            assertEquals(
+                listOf(1, 2, 3),
+                viewModel.uiState.value.priorities
+                    .map { it.mediaId }
+            )
+
+            assertTrue(
+                viewModel.uiState.value
+                    .errorMessage != null
+            )
+        }
+
+    @Test
     fun `moving a priority updates order indexes`() =
         runTest {
             val priorities = listOf(
