@@ -10,7 +10,7 @@
 
 ## Commits This Week
 
-**Link:**
+**Link:*https://github.com/fascineh1/media-tracker-android/pull/new/week-12*
 
 ---
 
@@ -34,7 +34,7 @@ I also noticed that error handling was centralized in the repository, making the
 I also noted that the overall architecture is consistent with the rest of the application.
 ---
 
-## Bonus Feature — Final Status before Week 14? -->
+## Bonus Feature — Final Status before Week 14? 
 
 **What works end-to-end, right now:**
 
