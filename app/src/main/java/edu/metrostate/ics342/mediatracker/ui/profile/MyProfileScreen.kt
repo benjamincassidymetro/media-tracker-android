@@ -2,6 +2,9 @@ package edu.metrostate.ics342.mediatracker.ui.profile
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.res.painterResource
+import edu.metrostate.ics342.mediatracker.R
+import edu.metrostate.ics342.mediatracker.data.model.toIconRes
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -17,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 
@@ -27,7 +31,7 @@ fun MyProfileScreen(
     onSettingsClick: () -> Unit,
     viewModel: ProfileViewModel = viewModel()
 ) {
-    val user    by viewModel.currentUser.collectAsState()
+    val user    by viewModel.currentUser.collectAsStateWithLifecycle()
     val library by viewModel.libraryPreview.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -143,16 +147,18 @@ fun MyProfileScreen(
                             Surface(color = MaterialTheme.colorScheme.surfaceVariant,
                                 modifier = Modifier.fillMaxSize()) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    Text(when (item.media.mediaType) {
-                                        "book" -> "📖"; "movie" -> "🎬"; "show" -> "📺"
-                                        else -> "?"
-                                    })
+                                    Icon(
+                                        painter = painterResource(item.media?.mediaType.toIconRes()),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
                             }
                         }
                         Spacer(Modifier.width(12.dp))
                         Column {
-                            Text(item.media.title, style = MaterialTheme.typography.bodyMedium,
+                            Text(item.media?.title ?: "", style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Medium)
                             Text(stringResource(item.status.labelRes),
                                 style = MaterialTheme.typography.labelSmall,
